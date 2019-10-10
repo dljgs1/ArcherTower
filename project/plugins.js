@@ -119,7 +119,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		}).forEach(function (block) {
 			core.drawBlock(block, layer, arr);
 		});
-		core.drawNets(layer);
+		core.drawNets(layer, floorId);
 		// if (onMap) core.status.autotileAnimateObjs.map = core.clone(arr);
 	}
 
@@ -465,7 +465,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 	// 射击
 	var simulate = false;
 	var shootUpdate = function(pos){
-		var cgpt = (flags.changePoints||[]).find(function(pt){
+		var cgpt = ((flags.changePoints||{})[core.status.floorId]||[]).find(function(pt){
 			return pt.x == pos.x && pt.y == pos.y;
 		})
 		if(cgpt && !cgpt.disable){
@@ -767,7 +767,8 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 	this.shootAnimate = function(sx,sy,direction,checkFunc,callback){
 		core.playSound('shoot.ogg');
 		var blk = {'x':sx, 'y':sy, 'direction': direction};
-		var layer = core.scenes.mapScene.getLayer('animate');
+		flags.tmp_blk = blk;
+		var layer = core.scenes.mapScene.getLayer('event');
 		var obj = core.sprite.getSpriteObj('arrowShow');
 		layer.addNewObj(obj);
 		core.becomeSubject(blk);
@@ -1050,7 +1051,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		}
 	}
 
-	this.drawNets = function(ctx){
+	this.drawNets = function(ctx, floorId){
 		(core.getFlag('nets', [])).forEach(function(blk){
 			if(blk.notify){
 				blk.notify("draw");
@@ -1062,7 +1063,8 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 				blk.notify("draw");
 			}
 		});
-		(core.getFlag('changePoints', [])).forEach(function(blk){
+		
+		(core.getFlag('changePoints', {})[floorId]||[]).forEach(function(blk){
 			if(blk.notify){
 				blk.notify("draw");
 			}else{
@@ -1081,7 +1083,8 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		// 强击关闭
 		(flags.buff || {})['skill5']=false; 
 		// 用过的转向清除
-		flags.changePoints = (flags.changePoints||[]).filter(function(pt){
+		
+		(flags.changePoints||{})[core.status.floorId] = ((flags.changePoints||{})[core.status.floorId]||[]).filter(function(pt){
 			if(pt.disable && pt.notify){
 				pt.notify('remove');
 			}

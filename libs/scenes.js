@@ -148,6 +148,14 @@ baseScene.prototype.addLayer = function(name, r, floor){
     this.stage.addChild(r);
 }
 
+baseScene.prototype.removeLayer = function(name, r){
+    r = r || this.layersTable[name];
+    if(r){
+        this.stage.removeChild(r);
+        delete this.layersTable[name];
+    }
+}
+
 ///// 在某一层添加sprite（！重要）
 baseScene.prototype.addSpriteToLayer = function(name, obj){
     if(this.layersTable[name]){

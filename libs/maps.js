@@ -1250,6 +1250,7 @@ maps.prototype._drawThumbnail_drawTempCanvas = function (floorId, blocks, option
     }
     this._empowerBlocks(blocks); // 赋予精灵（如果已经有了 那就会有两个
     this._drawThumbnail_realDrawTempCanvas(floorId, blocks, options, tempScene);
+    tempScene.update(); 
     tempScene.render();
     tempCanvas.clearRect(0, 0, tempWidth, tempHeight);
     tempCanvas.drawImage(tempScene.view, 0, 0);
@@ -1276,17 +1277,19 @@ maps.prototype._drawThumbnail_realDrawTempCanvas = function (floorId, blocks, op
     // 缩略图：前景
     this.drawFg(floorId, fg);
     // 缩略图：显伤
+    scene.removeLayer('tempDamage');
     if (options.damage){
         var tempCanvas = core.createCleanCanvas('tempDamage', 0, 0, core.bigmap.tempCanvas.canvas.width, core.bigmap.tempCanvas.canvas.height);
         var ctx = tempCanvas.getContext('2d');
         core.control.updateDamage(floorId, ctx);
         var dmg = scene.getLayer('tempDamage');
         if(!dmg){
-            dmg = core.createCanvasLayer(tempCanvas)
+            dmg = core.createCanvasLayer(tempCanvas);
             scene.addLayer('tempDamage', dmg, 999999);
         }else{
             dmg.updateTexture(tempCanvas);
         }
+    }else{
     }
 }
 

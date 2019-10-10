@@ -442,7 +442,7 @@ var events_c12a15a8_c380_4b28_8144_256cba95f760 =
 										"true": [
 											{
 												"type": "function",
-												"function": "function(){\nflags.changePoints = flags.changePoints || [];\nflags.changePoints.push({ x: flags.x, y: flags.y, direction: flags.tmp_dir });\ncore.drawNets(core.scenes.mapScene.getLayer('event'));\n}"
+												"function": "function(){\nflags.changePoints = flags.changePoints || {};\nflags.changePoints[core.status.floorId] = flags.changePoints[core.status.floorId] || [];\nflags.changePoints[core.status.floorId].push({ x: flags.x, y: flags.y, direction: flags.tmp_dir });\ncore.drawNets(core.scenes.mapScene.getLayer('event'));\n}"
 											}
 										],
 										"false": [

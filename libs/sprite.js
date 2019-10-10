@@ -568,7 +568,7 @@ canvasLayer.prototype._init = function(canvas){
 }
 canvasLayer.prototype.updateTexture = function(canvas){
     if(canvas)this.textrure = Texture.from(canvas);
-    else this.texture.update();
+    this.texture.update();
 }
 canvasLayer.prototype.clear = function() {
 }
