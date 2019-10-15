@@ -368,7 +368,8 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			"text": "消耗1能量，布下一张网，怪物经过时会困住一回合，并造成${core.status.hero.def || 50}点(勇士防御值)的伤害。",
 			"equip": {
 				"cost": 1
-			}
+			},
+			"gesture":"ud",
 		},
 		"skill3": {
 			"cls": "constants",
@@ -376,7 +377,8 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			"text": "消耗2能量，选择一个点和方向，下次攻击的箭矢将在该点进行转向。",
 			"equip": {
 				"cost": 2
-			}
+			},
+			"gesture":"rd",
 		},
 		"skill4": {
 			"cls": "constants",
@@ -384,7 +386,8 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			"text": "消耗1能量，瞬间后退两步。(后退过程中不能有阻挡)",
 			"equip": {
 				"cost": 1
-			}
+			},
+			"gesture":"rl",
 		},
 		"skill5": {
 			"cls": "constants",
@@ -392,7 +395,8 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			"text": "消耗3能量，下次箭矢将会穿透怪物，每穿透一次伤害降低一半。",
 			"equip": {
 				"cost": 3
-			}
+			},
+			"gesture":"dr",
 		}
 	},
 	"itemEffect": {

@@ -116,7 +116,7 @@ maps.prototype.initBlock = function (x, y, id, addInfo, eventFloor) {
         if (changeFloor) this._addEvent(block, x, y, {"trigger": "changeFloor", "data": changeFloor});
     }
     if (main.mode == 'editor') delete block.disable;
-    core.becomeSubject(block);// 凡是init的blcok 都要成为观察对象
+    core.becomeSubject(block);// 凡是init的blcok 都要成为观察对象?
     return block;
 }
 
@@ -808,21 +808,7 @@ maps.prototype.drawBg = function (floorId, ctx) {
 maps.prototype._drawBg_drawBackground = function (floorId, layer) {
     var width = core.floors[floorId].width, height = core.floors[floorId].height;
     var groundId = (core.status.maps || core.floors)[floorId].defaultGround || "ground";
-    var yOffset = core.material.icons.terrains[groundId]; // TODO: 改成sprite
-    var ctx = document.createElement('canvas').getContext('2d');//layer.createBackCanvas(); //document.createElement("canvas").getContext("2d");
-    ctx.canvas.width = width * core.__BLOCK_SIZE__;
-    ctx.canvas.height = height * core.__BLOCK_SIZE__;
-
-    if (yOffset != null) {
-        for (var i = 0; i < width; i++) {
-            for (var j = 0; j < height; j++) {
-                // ctx.drawImage(core.material.images.terrains, 0, yOffset * 32, 32, 32, i * 32, j * 32, 32, 32);
-                core.drawSpriteToCanvas(groundId, ctx, {x:i * core.__BLOCK_SIZE__, y:j * core.__BLOCK_SIZE__});
-                //obj.drawToCanvas(ctx); // layer.drawObj(obj)
-            }
-        }
-    }
-    var obj = core.getSpriteFromImage(ctx.canvas);
+    var obj = core.getTillingSprite(groundId, width * core.__BLOCK_SIZE__, height*core.__BLOCK_SIZE__);
     obj.zIndex = -1;
     layer.addChild(obj);
 }
@@ -1834,11 +1820,16 @@ maps.prototype.moveBlock = function (x, y, steps, time, keep, callback) {
         return;
     }
     // var block = blockArr[0], blockInfo = blockArr[1];
+    var id = setTimeout(null);
+    core.animateFrame.asyncId[id] = true;
     this._moveBlock_spriteMove(block, steps, time, function(){
         core.maps._moveJumpSprite_finished(null, block, {
             'keep': keep,
             'animate': time!=0,
-        }, callback);
+        }, function(){
+            delete core.animateFrame.asyncId[id];
+            if(callback)callback();
+        });
     });
 }
 
@@ -1850,7 +1841,7 @@ maps.prototype._moveBlock_spriteMove = function(block, steps, time, callback, re
     var i = 0;
     var moveInfo = {
         direction: moveSteps[i], step: 0, per_time: time / 16 / core.status.replay.speed,
-        speed: core.__BLOCK_SIZE__ / time,
+        speed: time / core.__BLOCK_SIZE__ / 16,
     }
     var nextStep = function(){
         moveInfo.direction = moveSteps[i];

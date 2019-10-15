@@ -2,6 +2,7 @@
 
 var SSPrite = PIXI.Sprite;
 var PSprite = PIXI.AnimatedSprite;
+var TSprite = PIXI.TilingSprite;
 var SText = PIXI.Text;
 var Container = PIXI.Container;
 var Texture = PIXI.Texture;
@@ -429,6 +430,12 @@ sprite.prototype.getEmptySprite = function(name){
 }
 sprite.prototype.getSpriteFromImage = function(image){
     return SSPrite.from(image);
+}
+
+
+sprite.prototype.getTillingSprite = function(name, width, height){
+    if(this.textures[name])
+        return new TSprite(this.textures[name][0][0], width, height);
 }
 
 sprite.prototype.getSpriteFromFrameImage = function(image, frame, width){

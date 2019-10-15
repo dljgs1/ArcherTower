@@ -671,7 +671,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 				return;
 			}
 			var net = (flags.nets||[]).find(function(t){
-				return t.x==blk.x && t.y==blk.y
+				return t.x==blk.x && t.y==blk.y && t.floorId == core.status.floorId;
 			});
 			if(net){
 				net.notify('remove');
@@ -967,6 +967,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 			flags.nets.push({
 				x: core.getHeroLoc('x'),
 				y: core.getHeroLoc('y'),
+				floorId: core.status.floorId,
 			});
 			core.drawNets(core.scenes.mapScene.getLayer('event'));
 			return false;
@@ -1052,8 +1053,10 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 	}
 
 	this.drawNets = function(ctx, floorId){
+		floorId = floorId || core.status.floorId;
 		(core.getFlag('nets', [])).forEach(function(blk){
-			if(blk.notify){
+			if(blk.floorId != floorId)return;
+			if(blk.notify && blk.observers().length>0){
 				blk.notify("draw");
 			}else{
 				core.becomeSubject(blk);
@@ -1065,7 +1068,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		});
 		
 		(core.getFlag('changePoints', {})[floorId]||[]).forEach(function(blk){
-			if(blk.notify){
+			if(blk.notify && blk.observers().length>0){
 				blk.notify("draw");
 			}else{
 				core.becomeSubject(blk);
@@ -1111,5 +1114,216 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 			default:break;
 		}
 	}
+},
+
+"gestureAction":function(){
+	///// 手势识别
+	var mx, my, moving=false;
+	var route = [];
+	var vecs = [];
+	var thrLen = 25; // 判断路径的点数阈值
+	var thrDist2 = 32*32; // 记录距离的阈值
+
+	// 基本向量操作
+	var Vector = function(x, y){
+		this.x = x;
+		this.y = y;
+		this.multiply = function(vec){
+			return this.x*vec.x + this.y*vec.y;
+		}
+		this.norm2 = function(){
+			return this.x*this.x + this.y*this.y;
+		}
+		this.calAngle = function(vec){
+			return Math.acos(this.multiply(vec)/Math.sqrt(this.norm2()*vec.norm2()))/Math.PI*180;
+		}
+		this.add = function(vec){
+			this.x += vec.x;
+			this.y += vec.y;
+		}
+		// 编成方向码
+		this.encode = function(){
+			if(Math.abs(this.x)>Math.abs(this.y)){
+				return this.x>0 ? 'right':'left';
+			}else{
+				return this.y < 0 ? 'up' : 'down';
+			}
+		}
+	}
+
+	// 路径融合
+	var packRoute = function(){
+		var dx=0,dy=0;
+		vecs.forEach(function(v){
+			dx += v.x; dy += v.y;
+		})
+		var r = new Vector(dx,dy);
+		vecs = [];
+		if(r.norm2()<thrDist2){
+			vecs.push(r);
+			return;
+		}
+		if(route.length){
+			var lastRoute = route[route.length-1];
+			var ang =  Math.abs(lastRoute.calAngle(r));
+			if (ang < 30 || lastRoute.encode()==r.encode()){ // 如果偏差较小 则认为方向累积
+				lastRoute.add(r);
+			}else{// 否则 产生新的方向
+				route.push(r);
+			}
+		}else{
+			route.push(r);
+		}
+		
+	}
+
+	var _ondown = function (_x, _y, px, py) {
+		if (core.isPlaying() && core.hasFlag('enableGesture') && !core.status.lockControl) {
+			mx = px;
+			my = py;
+			moving = true;
+			route = [];
+			vecs = [];
+		}
+	}
+	var _onup = function () {
+		if (moving) {
+			moving = false;
+			core.clearMap('ui');
+			core.actions.doRegisteredAction('gesture', route.map(function(v){return v.encode()}));
+			if(route.length){
+				core.status.stepPostfix = [];
+				route = [];
+				return true;
+			}
+		}
+	}
+
+	var gestureAction = function(route, prepare){
+		if(route.length==1){
+			if(prepare){
+				var dict = {'left':'左','right':'右','up':'上','down':'下',};
+				if(core.hasItem('skill1')){
+					return {'name': dict[route[0]]+"射击", 'id': 'skill1'};
+				}
+				else{
+					return ;
+				}
+			}else{
+				core.setHeroLoc('direction', route[0]);
+				core.useItem('skill1');
+				return;
+			}
+		}
+		var code = '';
+		route.forEach(function(r){
+			code += r[0];
+		});
+		flags.gestureAction = flags.gestureAction || {};
+		var it = flags.gestureAction[code];
+		var items = core.material.items;
+		if(!it){
+			for(var k in core.status.hero.items.constants){
+				if(items[k] && items[k].gesture==code){
+					it = k;break;
+				}
+			}
+		}
+		if(it){
+			if(prepare){
+				return {'name': items[it].name, 'id': it};
+			}
+			if(core.canUseItem(it)){
+				core.drawTip('使用'+items[it].name, it);
+				core.useItem(it);
+				return true;
+			}else{
+				core.drawTip('无法使用');
+			}
+		}else{
+
+		}
+	}
+
+	var _onmove = function (_x, _y, px, py) {
+		if(moving){
+			vecs.push(new Vector(px-mx, py-my));
+			core.drawLine('ui', mx, my, px, py, "#ffd700");
+			mx = px; my = py;
+			if(vecs.length >= thrLen){
+				packRoute();
+				if(route.length>0){
+					var ret = gestureAction(route.map(function(v){return v.encode()}), true);
+					if(ret && !core.timeout.tipTimeout){
+						if(typeof ret == 'string'){
+							core.drawTip(ret);
+						}else{
+							core.drawTip(ret.name, ret.id);
+						}
+					}
+				}
+			}
+			return true;
+		}
+	}
+	this.bindGesture = function(code, it){
+		flags.gestureAction = flags.gestureAction || {};
+		flags.gestureAction[code] = it;
+	}
+
+	var gesture2direction = function(code){
+		var txt = {
+			'u':'↑',
+			'd':'↓',
+			'l':'←',
+			'r':'→',
+		}
+		var ret = '';
+		for(var i in code){
+			ret += txt[code[i]];
+		}
+		return ret;
+	}
+
+
+	core.registerAction('ondown', 'gestureOnDown', _ondown, 50);
+	core.registerAction('onup', 'gestureOnUp', _onup, 50);
+	core.registerAction('onmove','gestureOnMove', _onmove, 50);
+	core.registerAction('gesture', 'gestureAction', gestureAction, 50);
+
+	// 道具显示手势
+	ui.prototype._drawToolbox_drawDescription = function (info, max_height) {
+		core.setTextAlign('ui', 'left');
+		if (!info.selectId) return;
+		var item=core.material.items[info.selectId];
+		var name = item.name;
+		if(item.gesture){
+			name += '【'+gesture2direction(item.gesture)+'】';
+		}
+		core.fillText('ui', name, 10, 32, '#FFD700', this._buildFont(20, true))
+		var text = item.text||"该道具暂无描述。";
+		try {
+			// 检查能否eval
+			text = core.replaceText(text);
+		} catch (e) {}
+	
+		for (var font_size = 17; font_size >= 14; font_size -= 3) {
+			var lines = core.splitLines('ui', text, this.PIXEL - 15, this._buildFont(font_size, false));
+			var line_height = parseInt(font_size * 1.4), curr = 37 + line_height;
+			if (curr + lines.length * line_height < max_height) break;
+		}
+		core.setFillStyle('ui', '#FFFFFF');
+		for (var i=0;i<lines.length;++i) {
+			core.fillText('ui', lines[i], 10, curr);
+			curr += line_height;
+			if (curr>=max_height) break;
+		}
+		if (curr < max_height) {
+			core.fillText('ui', '<继续点击该道具即可进行使用>', 10, curr, '#CCCCCC', this._buildFont(14, false));
+		}
+	}
+	
+
 }
+
 }
