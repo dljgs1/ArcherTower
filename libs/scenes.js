@@ -112,6 +112,17 @@ baseScene.prototype.update = function(timeDelta){
     })
 }
 
+
+///// 突出某一层 其他层全部半透明 exclude为额外（不在透明列表范围内）
+scenes.prototype.emphasizeMapLayer = function(name, alpha, exclude){
+    exclude = exclude || [];
+    for(var n in this.mapScene.layersTable){
+        if(exclude.indexOf(n)<0 && n!=name)
+            this.mapScene.layersTable[n].alpha = alpha;
+    }
+}
+
+
 baseScene.prototype.refresh = function(){
     this.children.forEach(function(c){c.refresh();});
     this.layers.forEach(function(r){r.refresh();});
@@ -229,6 +240,7 @@ scenes.prototype._load = function(){
     this.mapScene.addLayer('bg', core.getNewLayerSprite(),1);
     this.mapScene.addLayer('event', core.getNewLayerSprite(),2);
     this.mapScene.addLayer('fg', core.getNewLayerSprite(),3);
+    this.mapScene.addLayer('number', core.getNewLayerSprite(),4);
 
     this.statusScene.addLayer('back', core.getNewLayerSprite(), 1)
     this.statusScene.addLayer('data', core.getNewLayerSprite(), 2)

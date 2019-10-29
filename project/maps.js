@@ -66,7 +66,7 @@ var maps_90f36752_8815_4be8_b32b_d7fad1d0542e =
 	"69": {"cls":"items","id":"jumpShoes"},
 	"70": {"cls":"items","id":"sword0"},
 	"71": {"cls":"items","id":"shield0"},
-	"72": {"cls":"items","id":"skill_1"},
+	"72": {"cls":"items","id":"modeSwitch"},
 	"73": {"cls":"items","id":"wand"},
 	"81": {"cls":"terrains","id":"yellowDoor","trigger":"openDoor"},
 	"82": {"cls":"terrains","id":"blueDoor","trigger":"openDoor"},
@@ -205,5 +205,8 @@ var maps_90f36752_8815_4be8_b32b_d7fad1d0542e =
 	"606": {"cls":"items","id":"skill2"},
 	"607": {"cls":"items","id":"skill3"},
 	"608": {"cls":"items","id":"skill4"},
-	"609": {"cls":"items","id":"skill5"}
+	"609": {"cls":"items","id":"skill5"},
+	"610": {"cls":"items","id":"skill6"},
+	"611": {"cls":"items","id":"doll"},
+	"612": {"cls":"items","id":"skill7"}
 }

@@ -117,7 +117,7 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			}
 		},
 		"shield0": {
-			"cls": "items",
+			"cls": "equips",
 			"name": "破旧的盾",
 			"text": "一个很破旧的铁盾",
 			"equip": {
@@ -300,10 +300,32 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			"name": "跳跃靴",
 			"text": "能跳跃到前方两格处"
 		},
-		"skill_1": {
+		"modeSwitch": {
 			"cls": "constants",
-			"name": "射击",
-			"text": "普通攻击"
+			"name": "箭术切换",
+			"text": "当前为${core.material.items['modeSwitch'].equip[flags.archerMode||'normal'].name}模式，每次射击造成${core.material.items['modeSwitch'].equip[flags.archerMode||'normal'].coe}倍伤害，消耗${core.material.items['modeSwitch'].equip[flags.archerMode||'normal'].cost}倍金币。",
+			"equip": {
+				"normal": {
+					"name": "普通",
+					"coe": 1,
+					"cost": 1,
+					"color": "#ffffff"
+				},
+				"easy": {
+					"name": "佯攻",
+					"describe": "无箭头射击",
+					"coe": 0,
+					"cost": 0,
+					"color": "#28FF28"
+				},
+				"hard": {
+					"name": "连矢",
+					"describe": "双箭射击",
+					"coe": 1.8,
+					"cost": 2,
+					"color": "#FF5809"
+				}
+			}
 		},
 		"wand": {
 			"cls": "items",
@@ -369,7 +391,7 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			"equip": {
 				"cost": 1
 			},
-			"gesture":"ud",
+			"gesture": "ud"
 		},
 		"skill3": {
 			"cls": "constants",
@@ -378,7 +400,7 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			"equip": {
 				"cost": 2
 			},
-			"gesture":"rd",
+			"gesture": "rd"
 		},
 		"skill4": {
 			"cls": "constants",
@@ -387,7 +409,7 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			"equip": {
 				"cost": 1
 			},
-			"gesture":"rl",
+			"gesture": "rl"
 		},
 		"skill5": {
 			"cls": "constants",
@@ -396,7 +418,34 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 			"equip": {
 				"cost": 3
 			},
-			"gesture":"dr",
+			"gesture": "dr"
+		},
+		"skill6": {
+			"cls": "constants",
+			"name": "击退",
+			"text": "消耗3能量，下次箭矢将会击退怪物一步并且眩晕一回合。如果被怪物挡住，则眩晕传递。",
+			"equip": {
+				"cost": 3
+			}
+		},
+		"doll": {
+			"cls": "tools",
+			"name": "替身人偶",
+			"text": "留下一个人偶，将怪物的仇恨转移。如果攻击怪物会导致人偶被识破而消失。"
+		},
+		"skill7": {
+			"cls": "constants",
+			"name": "蓄力",
+			"text": "原地蓄力，占用一回合，期间不能移动（射击或者取消后结束，取消不返还能量）连续蓄力，伤害为100%，140%，180%，等，能量总消耗为2,2+3,2+3+4。",
+			"equip": {
+				"cost": 0,
+				"cost1": 2,
+				"cost2": 3,
+				"cost3": 4,
+				"damage1": 1,
+				"damage2": 1.4,
+				"damage3": 1.8
+			}
 		}
 	},
 	"itemEffect": {
@@ -422,7 +471,7 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 		"shield5": "core.status.hero.def += 100;core.status.hero.mdef += 100",
 		"bigKey": "core.status.hero.items.keys.yellowKey++;core.status.hero.items.keys.blueKey++;core.status.hero.items.keys.redKey++;",
 		"superPotion": "core.status.hero.hp *= 2",
-		"moneyPocket": "core.status.hero.money += 50",
+		"moneyPocket": "core.status.hero.money += 5",
 		"superWine": "core.status.hero.mana += 5"
 	},
 	"itemEffectTip": {
@@ -448,7 +497,7 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 		"shield5": "'，防御+100，魔防+100'",
 		"bigKey": "'，全钥匙+1'",
 		"superPotion": "'，生命值翻倍'",
-		"moneyPocket": "'，金币+500'",
+		"moneyPocket": "'，金币+5'",
 		"superWine": "'，魔力+5'"
 	},
 	"useItemEffect": {
@@ -478,7 +527,7 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 		"blueJewel": "core.status.hero.def += core.values.blueJewel",
 		"greenJewel": "core.status.hero.mdef += core.values.greenJewel",
 		"yellowJewel": "core.insertAction([\n\t{\"type\": \"choices\", \"choices\": [\n\t\t{\"text\": \"攻击+1\", \"action\": [\n\t\t\t{\"type\": \"setValue\", \"name\": \"status:atk\", \"value\": \"status:atk+1\"}\n\t\t]},\n\t\t{\"text\": \"防御+2\", \"action\": [\n\t\t\t{\"type\": \"setValue\", \"name\": \"status:def\", \"value\": \"status:def+2\"}\n\t\t]},\n\t\t{\"text\": \"生命+200\", \"action\": [\n\t\t\t{\"type\": \"setValue\", \"name\": \"status:hp\", \"value\": \"status:hp+200\"}\n\t\t]},\n\t]}\n]);",
-		"skill_1": "core.baseShoot()",
+		"modeSwitch": "core.switchArcherMode()",
 		"arrow1": "flags.arrowCho = itemId",
 		"arrow2": "flags.arrowCho = itemId",
 		"arrow3": "flags.arrowCho = itemId",
@@ -488,7 +537,10 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 		"skill2": "core.useSkill(itemId)",
 		"skill3": "core.useSkill(itemId)",
 		"skill4": "core.useSkill(itemId)",
-		"skill5": "core.useSkill(itemId)"
+		"skill5": "core.useSkill(itemId)",
+		"skill6": "core.useSkill(itemId)",
+		"doll": "if (flags.doll && flags.doll.floorId == core.status.floorId) {\n\tflags.doll.notify(\"remove\");\n\tdelete flags.doll;\n}\n\nflags.doll = core.clone(core.status.hero.loc);\nflags.doll.floorId = core.status.floorId;\ncore.drawNets();",
+		"skill7": "core.useSkill(itemId)"
 	},
 	"canUseItemEffect": {
 		"book": "true",
@@ -517,7 +569,7 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 		"blueJewel": "true",
 		"greenJewel": "true",
 		"yellowJewel": "true",
-		"skill_1": "true",
+		"modeSwitch": "true",
 		"arrow1": "true",
 		"arrow2": "true",
 		"arrow3": "true",
@@ -527,7 +579,10 @@ var items_296f5d02_12fd_4166_a7c1_b5e830c9ee3a =
 		"skill2": "core.canUseSkill(itemId)",
 		"skill3": "true",
 		"skill4": "core.canUseSkill(itemId)",
-		"skill5": "true"
+		"skill5": "true",
+		"skill6": "core.canUseSkill(itemId)",
+		"doll": "true",
+		"skill7": "core.canUseSkill(itemId)"
 	},
 	"equipCondition": {}
 }

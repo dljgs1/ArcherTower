@@ -9,19 +9,30 @@ var data_a1e2fb4a_e986_4524_b0da_9b7ba7c0874d =
 			"MT4",
 			"MT5",
 			"MT6",
-			"MT7"
+			"MT7",
+			"MT8",
+			"MT9",
+			"MT10",
+			"MT11",
+			"MT12",
+			"MT13",
+			"MT14",
+			"MT15"
 		],
 		"images": [
 			"bg.jpg",
 			"winskin.png"
 		],
 		"tilesets": [
-			"magictower.png",
+            "forest1.png",
+            "forest2.png",
 		],
 		"animates": [
 			"hand",
 			"sword",
-			"zone"
+			"zone",
+			"stun",
+			"alert"
 		],
 		"bgms": [
 			"bgm.mp3"
@@ -91,7 +102,7 @@ var data_a1e2fb4a_e986_4524_b0da_9b7ba7c0874d =
 			"name": "阳光",
 			"lv": 1,
 			"hpmax": 9999,
-			"hp": 100,
+			"hp": 30,
 			"manamax": -1,
 			"mana": 10,
 			"atk": 10,
@@ -113,7 +124,8 @@ var data_a1e2fb4a_e986_4524_b0da_9b7ba7c0874d =
 			"loc": {
 				"direction": "up",
 				"x": 6,
-				"y": 10
+				"y": 10,
+				"name": "hero_org",
 			},
 			"flags": {},
 			"steps": 0
@@ -135,8 +147,6 @@ var data_a1e2fb4a_e986_4524_b0da_9b7ba7c0874d =
 					0,
 					0
 				],
-				"dw": 100,
-				"dh": 100,
 				"opacity": 1,
 				"time": 0
 			},
@@ -254,9 +264,7 @@ var data_a1e2fb4a_e986_4524_b0da_9b7ba7c0874d =
 			}
 		],
 		"startText": [
-			"Hi，欢迎来到 HTML5 魔塔样板！\n\n本样板由艾之葵制作，可以让你在不会写任何代码\n的情况下也能做出属于自己的H5魔塔！",
-			"这里游戏开始时的剧情。\n定义在data.js的startText处。\n\n你可以在这里写上自己的内容。",
-			"赶快来试一试吧！"
+			"本塔纯属瞎搞胡来，没有剧情，全靠瞎想来玩"
 		],
 		"shops": [
 			{
@@ -366,17 +374,17 @@ var data_a1e2fb4a_e986_4524_b0da_9b7ba7c0874d =
 		"lavaDamage": 100,
 		"poisonDamage": 10,
 		"weakValue": 20,
-		"redJewel": 3,
-		"blueJewel": 3,
-		"greenJewel": 5,
-		"redPotion": 100,
-		"bluePotion": 250,
-		"yellowPotion": 500,
-		"greenPotion": 800,
-		"breakArmor": 0.9,
-		"counterAttack": 0.1,
-		"purify": 3,
-		"hatred": 2,
+		"redJewel": 2,
+		"blueJewel": 2,
+		"greenJewel": 2,
+		"redPotion": 25,
+		"bluePotion": 50,
+		"yellowPotion": 100,
+		"greenPotion": 250,
+		"breakArmor": 0,
+		"counterAttack": 0,
+		"purify": 0,
+		"hatred": 0,
 		"moveSpeed": 100,
 		"animateSpeed": 400,
 		"floorChangeTime": 800
@@ -409,7 +417,7 @@ var data_a1e2fb4a_e986_4524_b0da_9b7ba7c0874d =
 		"equipboxButton": true,
 		"iconInEquipbox": false,
 		"enableAddPoint": false,
-		"enableNegativeDamage": false,
+		"enableNegativeDamage": true,
 		"hatredDecrease": true,
 		"betweenAttackCeil": false,
 		"betweenAttackMax": false,

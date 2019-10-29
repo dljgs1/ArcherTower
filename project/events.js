@@ -465,6 +465,23 @@ var events_c12a15a8_c380_4b28_8144_256cba95f760 =
 					}
 				]
 			}
+		],
+		"afterShoot": [
+			{
+				"type": "if",
+				"condition": "!flag:firstShoot",
+				"true": [
+					{
+						"type": "setValue",
+						"name": "flag:firstShoot",
+						"value": "true"
+					},
+					"\t[hero]等等？怎么回事？它怎么靠过来了，得赶紧射死",
+					"提示：射击后直接触发怪物仇恨，连续追杀，直到切换楼层后，丢失仇恨，要么杀死，要么走位",
+					"提示：另外，有的怪仇恨比较特殊，后续遇到时再具体介绍"
+				],
+				"false": []
+			}
 		]
 	}
 }

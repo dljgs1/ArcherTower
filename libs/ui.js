@@ -1247,8 +1247,10 @@ ui.prototype._drawTextBox_drawTitleAndIcon = function (titleInfo, hPos, vPos, al
         if (titleInfo.image == core.material.images.hero) {
             core.clearMap('ui', hPos.left + 15, image_top, 32, titleInfo.height);
             core.fillRect('ui', hPos.left + 15, image_top, 32, titleInfo.height, core.material.groundPattern);
-            core.drawImage('ui', titleInfo.image, 0, 0, core.material.icons.hero.width || 32, core.material.icons.hero.height,
-                hPos.left + 15, image_top, 32, titleInfo.height);
+            core.drawSpriteToCanvas(core.status.hero.loc.name || core.getFlag('heroIcon', 'hero'), core.getContextByName('ui'),
+                {x:hPos.left + 15, y:image_top});
+            //core.drawImage('ui', titleInfo.image, 0, 0, core.material.icons.hero.width || 32, core.material.icons.hero.height,
+            //    hPos.left + 15, image_top, 32, titleInfo.height);
         }
         else {
             core.status.boxAnimateObjs.push({

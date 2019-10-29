@@ -201,7 +201,6 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		// 可以在任何地方（如afterXXX或自定义脚本事件）调用函数，方法为  core.plugin.xxx();
 	}
 },
-
     "components": function () {
 	// 一个UI可以注册多个组件，但每一类组件只能注册一个
 	// 组件编写方法： 必须要返回一个至少包含启动（install）、卸载（uninstall）的对象，这个对象会被绑定作为UI的成员。UI会在注册组件时，为组件提供自身的访问接口，可以通过 this.ui 进行访问。可以获取的数据：this.ui.x this.ui.y this.ui.width this.ui.height
@@ -433,8 +432,8 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		return { 'install': install, 'uninstall': uninstall };
 	}
 },
-"archer":function(){
-// 策划
+    "archer": function () {
+	// 策划
 	/*
 	技能表：
 
@@ -453,58 +452,59 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 	main.dom.hard.onclick = function () {
 		if (core.isReplaying())
 			return;
-		if(core.canUseItem('skill1'))
-			core.useItem('skill1');
+		if (core.canUseItem('modeSwitch'))
+			core.useItem('modeSwitch');
 		// core.insertAction("技能盘");
 	}
 
 
 
 
-// ===== 逻辑
+	// ===== 逻辑
 	// 射击
 	var simulate = false;
-	var shootUpdate = function(pos){
-		var cgpt = ((flags.changePoints||{})[core.status.floorId]||[]).find(function(pt){
+	var shootUpdate = function (pos) {
+		var cgpt = ((flags.changePoints || {})[core.status.floorId] || []).find(function (pt) {
 			return pt.x == pos.x && pt.y == pos.y;
 		})
-		if(cgpt && !cgpt.disable){
+		if (cgpt && !cgpt.disable) {
 			core.playSound('shootChange.ogg');
 			pos.direction = cgpt.direction;
 			cgpt.disable = true;
 		}
-		var dx = core.utils.scan[pos.direction].x, dy = core.utils.scan[pos.direction].y;
+		var dx = core.utils.scan[pos.direction].x,
+			dy = core.utils.scan[pos.direction].y;
 		pos.x += dx;
 		pos.y += dy;
-		
+
 	}
-	var shootCheckBlock = function(pos, checkFunc){
-		if(!(pos.x>=0 && pos.y>=0 && pos.x<core.status.thisMap.width && pos.y<core.status.thisMap.height)){
+	var shootCheckBlock = function (pos, checkFunc) {
+		if (!(pos.x >= 0 && pos.y >= 0 && pos.x < core.status.thisMap.width && pos.y < core.status.thisMap.height)) {
 			return true;
 		}
-		var blk = core.getBlock(pos.x,pos.y);
-		if(checkFunc.updatePosition){
+		var blk = core.getBlock(pos.x, pos.y);
+		if (checkFunc.updatePosition) {
 			checkFunc.updatePosition(pos);
 		}
-		if(blk){
+		if (blk) {
 			var cls = blk.block.event.cls;
-			if(checkFunc[cls] && checkFunc[cls](blk.block, simulate)){
+			if (checkFunc[cls] && checkFunc[cls](blk.block, simulate, pos)) {
 				return true;
 			}
 		}
 		return false;
 	}
-	var shoot = function(x,y,dir,checkFunc){
+	var shoot = function (x, y, dir, checkFunc) {
 		var pos = {
 			x: x,
 			y: y,
 			direction: dir,
 		}
-		do{
+		do {
 			shootUpdate(pos);
-			if(shootCheckBlock(pos, checkFunc))
+			if (shootCheckBlock(pos, checkFunc))
 				return;
-		}while(pos.x>=0 && pos.y>=0 && pos.x<core.__SIZE__ && pos.y<core.__SIZE__);
+		} while (pos.x >= 0 && pos.y >= 0 && pos.x < core.__SIZE__ && pos.y < core.__SIZE__);
 	}
 
 
@@ -516,11 +516,12 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		// 1. 检查该点 cannotMove
 		if (core.inArray((core.floors[floorId].cannotMove || {})[x + "," + y], direction))
 			return false;
-	
-		var nx = x + core.utils.scan[direction].x, ny = y + core.utils.scan[direction].y;
+
+		var nx = x + core.utils.scan[direction].x,
+			ny = y + core.utils.scan[direction].y;
 		if (nx < 0 || ny < 0 || nx >= core.floors[floorId].width || ny >= core.floors[floorId].height)
 			return false;
-	
+
 		// 2. 检查该点素材的 cannotOut 和下一个点的 cannotIn
 		if (this._canMoveHero_checkCannotInOut([
 				extraData.bgArray[y][x], extraData.fgArray[y][x], extraData.eventArray[y][x]
@@ -530,243 +531,477 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 				extraData.bgArray[ny][nx], extraData.fgArray[ny][nx], extraData.eventArray[ny][nx]
 			], "cannotIn", direction))
 			return false;
-	
+
 		// 3. 检查是否能进将死的领域
-		if(flags.goDeadZone)return true;
-		if (floorId == core.status.floorId
-			&& core.status.hero.hp <= (core.status.checkBlock.damage[nx + "," + ny]||0)
-			&& !core.flags.canGoDeadZone && extraData.eventArray[ny][nx] == 0)
+		if (flags.goDeadZone) return true;
+		if (floorId == core.status.floorId &&
+			core.status.hero.hp <= (core.status.checkBlock.damage[nx + "," + ny] || 0) &&
+			!core.flags.canGoDeadZone && extraData.eventArray[ny][nx] == 0)
 			return false;
 		return true;
 	}
 	this.bfsFlood = function (startX, startY) {
 		flags.goDeadZone = true;
-		var route = {}, canMoveArray = core.maps.generateMovableArray();
+		var route = {},
+			canMoveArray = core.maps.generateMovableArray();
 		flags.goDeadZone = false;
 		var blockArr = core.getMapBlocksObj();
 		// 使用优先队列
-		var queue = new PriorityQueue({comparator: function (a,b) { return a.depth - b.depth; }});
-		route[startX + "," + startY] = {'step':0};
-		queue.queue({depth: 0, x: startX, y: startY});
-		while (queue.length!=0) {
-			var curr = queue.dequeue(), deep = curr.depth, nowX = curr.x, nowY = curr.y;
+		var queue = new PriorityQueue({ comparator: function (a, b) { return a.depth - b.depth; } });
+		route[startX + "," + startY] = { 'step': 0 };
+		queue.queue({ depth: 0, x: startX, y: startY });
+		while (queue.length != 0) {
+			var curr = queue.dequeue(),
+				deep = curr.depth,
+				nowX = curr.x,
+				nowY = curr.y;
 			for (var direction in core.utils.scan) {
 				if (!core.inArray(canMoveArray[nowX][nowY], direction)) continue;
 				var nx = nowX + core.utils.scan[direction].x;
 				var ny = nowY + core.utils.scan[direction].y;
-				if (nx<0 || nx>=core.bigmap.width || ny<0 || ny>=core.bigmap.height || route[nx+","+ny] != null) continue;
-				if(blockArr[nx+","+ny])continue; //只要是块就绕过
-				route[nx+","+ny] = {'direction':direction, 'step':deep+1};
-				queue.queue({depth: deep + 1, x: nx, y: ny});
+				if (nx < 0 || nx >= core.bigmap.width || ny < 0 || ny >= core.bigmap.height || route[nx + "," + ny] != null) continue;
+				if (blockArr[nx + "," + ny]) continue; //只要是块就绕过
+				route[nx + "," + ny] = { 'direction': direction, 'step': deep + 1 };
+				queue.queue({ depth: deep + 1, x: nx, y: ny });
 			}
 		}
 		return route;
 	}
 
 	// 死亡
-	var afterDead = function(blk){
-		flags.aiBlks.splice(flags.aiBlks.indexOf(blk), 1);
+	this.afterDead = function (blk) {
+		core.removeAI(blk);
+		//flags.aiBlks.splice(flags.aiBlks.indexOf(blk), 1);
 		blk.disable = true;
 		var enemy = core.material.enemys[blk.event.id];
 		var hint = "打败 " + enemy.name;
-		var money =  enemy.money;
+		var money = enemy.money;
 		var experience = enemy.experience;
-		if (core.flags.enableMoney) hint += "，金币+" + enemy.money;
-		if (core.flags.enableExperience) hint += "，经验+" + enemy.experience;	
+
+		if(blk.exDmg){ // 被毒的怪物价值下降 最多下降0.5
+			money *= (2-(blk.podmg||0)/enemy.hp) * 0.5;
+		}	
+		money = ~~money;
+
+		if (core.flags.enableMoney) hint += "，金币+" + money;
+		if (core.flags.enableExperience) hint += "，经验+" + enemy.experience;
 		core.status.hero.money += money;
 		core.status.hero.statistics.money += money;
 		core.status.hero.experience += experience;
 		core.status.hero.statistics.experience += experience;
-		
 
 		core.drawTip(hint);
 		var idx = core.status.thisMap.blocks.indexOf(blk);
-		if(idx>=0)core.status.thisMap.blocks.splice(idx, 1);
+		if (idx >= 0) core.status.thisMap.blocks.splice(idx, 1);
 		core.checkAfterBattle();
-		blk.notify('hide',{
-            'time': 500,
-            'callback': function(){
-                blk.notify('stop');
+		blk.notify('hide', {
+			'time': 500,
+			'callback': function () {
+				blk.notify('stop');
 				blk.notify('remove');
-            }
+			}
 		});
+
+		// 支援怪
+		var findGuard = function(x, y){
+			var blks = [];
+			for(var dir in core.utils.scan){
+				var dx = core.utils.scan[dir].x,
+					dy = core.utils.scan[dir].y;
+				var ox = x, oy = y;
+				do {
+					ox += dx; oy += dy;
+					var _blk = core.getBlock(ox,oy);
+				}while(!_blk || _blk.block.event.cls.indexOf('enemy')==0 && !core.hasSpecial(_blk.block.event.id, 34));
+				if(core.hasSpecial(_blk.block.event.id, 34)){
+					blks.push(_blk.block);
+				}
+			}
+			return blks;
+		}
+		//var hblks = findGuard(core.getHeroLoc('x'), core.getHeroLoc('y'));
+		//findGuard(blk.x, blk.y).filter(function(b){return hblks.indexOf(b)<0}).forEach(function(b){hblks.push(b)});
+		var hblks = findGuard(blk.x, blk.y);
+		hblks.forEach(function(b){
+			core.drawAnimate('alert',b.x,b.y);
+			// 检查点
+			core.insertAI(b, {'type':'check', data:[blk.x, blk.y]});
+		})
+		
+
+
+
 		//core.insertAction([
 		//	{"type": "hide", "loc": [[blk.x,blk.y]], "time": 500},
-		//  ]);
+		//  ]);	q
 	}
 
 	// 伤害处理
-	var hurt = function(blk, dmg){
-		var info = core.getEnemyInfo(blk.event.id,null,blk.x,blk.y);
-		dmg = dmg || Math.max(0,core.status.hero.atk - info.def);
-		// 击穿次数
-		var hitCount = flags._hitCount || 0;
-		hitCount += 1;
-		dmg /= hitCount;
-		flags._hitCount = hitCount;
+	var hurt = function (blk, dmg, arrow) {
+		var info = core.getEnemyInfo(blk.event.id, null, blk.x, blk.y);
+		if(core.hasSpecial(info,28)){
+			return;
+		}
+		dmg = dmg || Math.max(0, core.status.hero.atk); // 基础伤害
+		// todo：箭矢系数
+
+		dmg *= core.getArcherModeInfo().coe; // 状态系数
+
+		dmg = ~~dmg;
+
+		if(arrow){
+			// 蓄力增伤
+			var powerBuff = (flags.buff || {})['skill7'];
+			if(powerBuff){
+				dmg *= 1+core.items.items['skill7'].equip['damage'+powerBuff];
+				dmg = ~~dmg;
+			}
+
+			// 击穿次数 影响伤害
+			var hitCount = flags._hitCount || 0;
+			hitCount += 1;
+			dmg /= hitCount;
+			flags._hitCount = hitCount;
+		}
 		// 爆裂箭
-		if(core.hasEquip('arrow3') && !flags._bombArrow){
+		if (arrow && core.hasEquip('arrow3') && !flags._bombArrow) {
 			core.playSound('shootBomb.ogg');
 			flags._bombArrow = true;
 			var ard = core.utils.scan;
-			for(var d in ard){
+			for (var d in ard) {
 				var dst = core.getBlock(blk.x + ard[d].x, blk.y + ard[d].y);
-				if(dst && dst.block.event.cls=='enemys'){
-					hurt(dst.block, dmg*(flags.bombArrowDamage || 0.5));
+				if (dst && dst.block.event.cls == 'enemys') {
+					hurt(dst.block, dmg * (flags.bombArrowDamage || 0.5), arrow);
 				}
 			}
 			flags._bombArrow = false;
 		}
 		// 麻痹箭
-		if(core.hasEquip('arrow4')){
+		if (arrow && core.hasEquip('arrow4')) {
 			blk.palsy = true;
 		}
+		// 击退
+		if (arrow && core.hasChoiceSkill('skill6')) {
+			blk.pushFist = arrow.direction;
+		}
+
 		blk.damage = blk.damage || 0;
 		blk.damage += dmg;
-		var exDmg = core.hasEquip('arrow2')?Math.floor(blk.damage * (flags.pdamage || 0.1)):0;
-		blk.damage += exDmg;
+
+		// 毒伤
+		if(arrow && core.hasEquip('arrow2') && !core.hasSpecial(blk.event.id, 33)){
+			blk.exDmg = blk.exDmg || 0;
+			blk.exDmg += flags.pdamage || 5;
+		}
+		// var exDmg = core.hasEquip('arrow2') ? Math.floor(blk.damage * (flags.pdamage || 0.1)) : 0;
+
 		blk.hurtct = blk.hurtct || 0;
 		blk.hurtct += 1;
-		if(info.hp - dmg - exDmg<=0){
-			afterDead(blk);
-		}else{
-			insertAI(blk);
+		if (info.hp - dmg <= 0) {
+			core.afterDead(blk);
+		} else {
+			core.insertAI(blk);
 		}
+		core.updateDamage();
 	}
 
 	var inv_dir = {
-		'left':'right',
-		'right':'left',
-		'up':'down',
-		'down':'up',
+		'left': 'right',
+		'right': 'left',
+		'up': 'down',
+		'down': 'up',
 	}
+
+
+	// 眩晕碰撞链
+	var stunChain = function(blk, direction){
+		//检查眩晕传递：
+		var dx = core.utils.scan[direction].x,
+			dy = core.utils.scan[direction].y;
+		do {
+			var tblk = 
+			core.status.thisMap.blocks.find(function(b){
+				return b.event.cls.indexOf('enemy')>=0 && b!==blk && b.x == blk.x + dx && b.y == blk.y + dy;
+			});
+			if(tblk){
+				core.insertAI(tblk);
+				blk.action = null;
+				blk.notify('shake', {direction:direction, power:core.__BLOCK_SIZE__/2, speed:2});
+				core.drawAnimate('stun',blk.x,blk.y);
+				tblk.stun = 1;
+				blk = tblk;
+			}else{
+				break;
+			}
+		}while (true);
+	}
+
+	// 嗜血怪追杀状态更新
+	this.updateChaseBleed = function(floorId){
+		floorId = floorId || core.status.floorId;
+		core.status.maps[floorId].blocks.forEach(function(blk){
+			if(core.hasSpecial(blk.event.id, 31)){
+				if(core.hasBuffStatus('bleed')){
+					if(flags.aiBlks.indexOf(blk)<0)
+						core.insertAI(blk);
+				}else{
+					if(!blk.hurtct)
+						core.removeAI(blk);
+				}
+
+			}
+		})
+	}
+
+	// x,y 位置的巡逻怪检查 range视线范围是否有敌人
+	this.patrolCheck = function(x, y, range, func){
+		var width = core.status.thisMap.width,
+			height = core.status.thisMap.height;
+        for (var dir in core.utils.scan) {
+            var dist = range || 99;
+            var dx = core.utils.scan[dir].x,
+                dy = core.utils.scan[dir].y;
+            var nx = x + dx,
+                ny = y + dy,
+                currloc = nx + "," + ny;
+            do{
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) break;
+                if(func)func(nx,ny,dir,dist);
+                else{
+                	if(core.getHeroLoc('x')==nx && core.getHeroLoc('y')==ny){
+                		return true;
+					}
+				}
+                nx += dx; ny += dy; currloc = nx + "," + ny;
+                dist -= 1;
+            }while(dist && !core.getBlock(nx, ny));
+        }
+        return false;
+	}
+
+
 	// 刷新AI的行动
-	var AIaction = function(){
+	var AIaction = function () {
 		var hloc = core.status.hero.loc;
-		flags.aiBlks = (flags.aiBlks || []).filter(function(blk){
-			return core.status.thisMap.blocks.indexOf(blk)>=0;
+		flags.aiBlks = (flags.aiBlks || []).filter(function (blk) {
+			return core.status.thisMap.blocks.indexOf(blk) >= 0;
 		});
-		flags.aiBlks.forEach(function(blk){
+		flags.aiBlks.forEach(function (blk) {
 			blk.disable = true;
 		});
-		var destX = hloc.x, destY = hloc.y;
-		if(core.status.heroMoving){
-			if(!core.getBlock(core.nextX(),core.nextY())){
-				destX = core.nextX(); destY = core.nextY();
+		var destX = hloc.x,
+			destY = hloc.y;
+		if (core.status.heroMoving) {
+			if (!core.getBlock(core.nextX(), core.nextY())) {
+				destX = core.nextX();
+				destY = core.nextY();
 			}
 		}
+		if(flags.doll){
+			destX = flags.doll.x;
+			destY = flags.doll.y;
+		}
+
 		var route = core.bfsFlood(destX, destY);
-		var empty = {'step':999};
-		flags.aiBlks.sort(function(blk1, blk2){
-			if(blk1===blk2)return 0;
-			return (route[blk1.x+','+blk1.y]||empty).step - (route[blk2.x+','+blk2.y]||empty).step;
+		var empty = { 'step': 999 };
+		flags.aiBlks.sort(function (blk1, blk2) {
+			if (blk1 === blk2) return 0;
+			return (route[blk1.x + ',' + blk1.y] || empty).step - (route[blk2.x + ',' + blk2.y] || empty).step;
 		})
-		
-		flags.aiBlks.forEach(function(blk){
-			blk.disable = false;
-			var posIdx = blk.x+','+blk.y;
-			if(blk.palsy){
+
+		// 更新 ai 状态
+		flags.aiBlks.forEach(function (blk) {
+            blk.disable = false;
+			if(!blk.enable){
+				blk.action = null;
+                return;
+			}// 只有激活的才进行动作
+			var posIdx = blk.x + ',' + blk.y;
+			var curroute = route[posIdx];
+			route[posIdx] = 'occupy';
+			if (blk.pushFist) {
+				blk.action = blk.pushFist;
+				blk.stun = 1; // 眩晕
+				delete blk.pushFist;
+				stunChain(blk, blk.action);
+				return;
+			}
+			if (blk.stun) {
+				// todo:添加眩晕动画
+				core.drawAnimate('stun', blk.x, blk.y);
+				blk.stun -= 1;
+				blk.action = null;
+				return;
+			}
+			if (blk.palsy) {
 				blk.palsy = false;
 				blk.action = null;
 				return;
 			}
-			var net = (flags.nets||[]).find(function(t){
-				return t.x==blk.x && t.y==blk.y && t.floorId == core.status.floorId;
+			if(blk.eventAction){
+				var act = blk.eventAction;
+				switch (act.type) {
+                    case "patrol":break;
+					case "check": // 检查点
+                        // 检查完毕
+						if(act.data[0]==blk.x && act.data[1]==blk.y){
+							core.removeAI(blk);
+                            delete blk.eventAction;
+							return;
+						}
+						// 发现敌情
+						if(core.patrolCheck(blk.x,blk.y)){
+							core.drawAnimate("alert", blk.x, blk.y);
+                            delete blk.eventAction;
+                            break;
+						}
+						blk.disable = true;
+						var myRoute = core.bfsFlood(act.data[0], act.data[1])[posIdx];
+                        blk.disable = false;
+						if(curroute && curroute!="occupy"){
+							curroute = myRoute;
+						}
+						break;
+					default :
+						break;
+                }
+			}
+			var net = (flags.nets || []).find(function (t) {
+				return t.x == blk.x && t.y == blk.y && t.floorId == core.status.floorId;
 			});
-			if(net){
+			if (net) {
 				net.notify('remove');
-				flags.nets.splice(flags.nets.indexOf(net),1);
-				blk.action=null;
+				flags.nets.splice(flags.nets.indexOf(net), 1);
+				blk.action = null;
 				hurt(blk, core.status.hero.def || flags.netDamage || 50);
 				return;
 			}
-			if(!route[posIdx]){
+			if (!curroute || curroute=='occupy') {
 				blk.action = null;
 				return;
 			}
-			var dir = inv_dir[route[posIdx].direction];
-			if(!dir){
+			var dir = inv_dir[curroute.direction];
+			if (!dir) {
 				blk.action = null;
 				return;
 			}
 			var nx = blk.x + core.utils.scan[dir].x,
 				ny = blk.y + core.utils.scan[dir].y
-			if(route[nx+','+ny]){
+			if (route[nx + ',' + ny] && route[nx + ',' + ny]!='occupy') {
 				blk.action = dir;
-				route[nx+','+ny] = null;
-			}else{
-				blk.action=null;
+				route[posIdx] = 'blank';
+				route[nx + ',' + ny] = 'occupy';
+			} else {
+				blk.action = null;
+				if(route[nx + ',' + ny]=='occupy'){
+					blk.notify("shake", {direction:dir, power:core.__BLOCK_SIZE__/2, speed:2});
+					core.drawAnimate('stun',blk.x,blk.y);
+				}
 			}
 		});
 	}
-	var insertAI = function(blk){
-		if(flags.aiBlks.indexOf(blk)>=0){
+	// 触发仇恨
+	this.insertAI = function (blk, event) {
+		if(flags.doll && flags.doll.floorId == core.status.floorId){
+			flags.doll.notify("remove");
+			delete flags.doll;
+		}
+		if (flags.aiBlks.indexOf(blk) >= 0) {
 			return;
 		}
-		blk.acive = true;
+		blk.enable = true;
+        blk.eventAction = event;
 		flags.aiBlks.push(blk);
 	}
 
-	this.saveAIData = function(floorId){
+	this.removeAI = function(blk){
+		var idx = (flags.aiBlks||[]).indexOf(blk);
+		if (idx >= 0) {
+			flags.aiBlks.splice(idx,1);
+		}
+	}
+
+	// 消除仇恨
+	this.disableAI = function(blk){
+		if(blk){
+            blk.enable=false;
+		}
+		else{
+            (flags.aiBlks||[]).forEach(function(blk){
+                if(!core.hasSpecial(blk.event.id, 31))
+                	blk.enable = false;
+            });
+		}
+	}
+
+	this.hasAI = function(blk){
+        var idx = (flags.aiBlks||[]).indexOf(blk);
+		return idx >= 0;
+	}
+
+	this.saveAIData = function (floorId) {
 		floorId = floorId || core.status.floorId;
-		flags.aiBlks = (flags.aiBlks || []).filter(function(blk){
-			return core.status.maps[floorId].blocks.indexOf(blk)>=0;
+		flags.aiBlks = (flags.aiBlks || []).filter(function (blk) {
+			return core.status.maps[floorId].blocks.indexOf(blk) >= 0;
 		});
 		flags.aiInfo = flags.aiInfo || {};
 		flags.aiInfo[floorId] = [];
 		var exclude = ['event', 'observers'];
-		flags.aiBlks.forEach(function(blk) {
+		flags.aiBlks.forEach(function (blk) {
 			var tmp = {};
-			for(var k in blk){
-				if(exclude.indexOf(k)>=0)continue;
-				if(typeof blk[k] == 'function')continue;
+			for (var k in blk) {
+				if (exclude.indexOf(k) >= 0) continue;
+				if (typeof blk[k] == 'function') continue;
 				tmp[k] = blk[k];
 			}
 			flags.aiInfo[floorId].push(tmp);
 		});
 	}
-	this.loadAIData = function(floorId){
+	this.loadAIData = function (floorId) {
 		floorId = floorId || core.status.floorId;
 		flags.aiBlks = [];
-		((flags.aiInfo||{})[floorId] || []).forEach(function(blk) {
+		((flags.aiInfo || {})[floorId] || []).forEach(function (blk) {
 			var block = core.getBlock(blk.x, blk.y, floorId);
-			if(block){
-				for(var key in blk){
+			if (block) {
+				for (var key in blk) {
 					block.block[key] = blk[key];
 				}
 				flags.aiBlks.push(block.block);
+				if(block.block.eventAction){// 有行动事件的块会恢复行动
+					block.block.enable = true;
+				}
 			}
 		});
 	}
 
 
 	// 获取射击路径
-	var getShootRoute = function(loc, checkFun){
+	var getShootRoute = function (loc, checkFun) {
 		loc = loc || core.status.hero.loc;
 		var route = [];
 		var func = {};
-		func.enemys = checkFun.enemys || function(blk){
+		func.enemys = checkFun.enemys || function (blk) {
 			return true;
 		};
-		func.terrains =  checkFun.terrains || function(blk){
+		func.terrains = checkFun.terrains || function (blk) {
 			return true;
 		};
 		var updt = checkFun.updatePosition;
-		func.updatePosition = function(pos){
+		func.updatePosition = function (pos) {
 			route.push(pos.direction);
-			if(updt){
+			if (updt) {
 				updt(pos);
 			}
 		}
-		shoot(loc.x,loc.y,loc.direction,func);
+		shoot(loc.x, loc.y, loc.direction, func);
 		return route;
 	}
 
-// ========= 动画
+	// ========= 动画
 
-	this.shootAnimate = function(sx,sy,direction,checkFunc,callback){
+	this.shootAnimate = function (sx, sy, direction, checkFunc, callback) {
 		core.playSound('shoot.ogg');
-		var blk = {'x':sx, 'y':sy, 'direction': direction};
+		var blk = { 'x': sx, 'y': sy, 'direction': direction };
 		flags.tmp_blk = blk;
 		var layer = core.scenes.mapScene.getLayer('event');
 		var obj = core.sprite.getSpriteObj('arrowShow');
@@ -775,65 +1010,38 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		blk.addObserver(obj);
 		var adspeed = 3;
 		var i = 6;
-		var next = function(){
+		var next = function () {
 			adspeed += i;
-			i=~~(i/2);
-			adspeed = Math.max(3,adspeed);
-			blk.notify('move',
-			{
+			i = ~~(i / 2);
+			adspeed = Math.max(3, adspeed);
+			blk.notify('move', {
 				direction: blk.direction,
 				speed: adspeed,
-				callback: function(){
+				callback: function () {
 					shootUpdate(blk);
-					if(shootCheckBlock(blk, checkFunc)){
+					if (shootCheckBlock(blk, checkFunc)) {
 						layer.removeChild(obj);
-						if(callback)callback();
-					}else{
+						if (callback) callback();
+					} else {
 						next();
 					}
-				}}
-			);
+				}
+			});
 		}
 		return next();
 
-		obj.setPositionWithBlock({x:sx,y:sy});
-		core.eventMoveSprite(obj, route, 50, function(){
+		obj.setPositionWithBlock({ x: sx, y: sy });
+		core.eventMoveSprite(obj, route, 50, function () {
 			layer.removeChild(obj);
-			if(callback)callback();
+			if (callback) callback();
 		});
 	}
-/*
-	this.shootAnimate = function(sx,sy,dir,dis,callback){
-		if(!core.dymCanvas.thunder)ctx = core.createCanvas('arrow',0,0,core.__PIXELS__,core.__PIXELS__,63);
-		var lastTime = 0;
-		var fps = 30;
-		var speed = 10;
-		var x = sx*32, y = sy*32;
-		var idx = ['up', 'left', 'right', 'down'].indexOf(dir);
-		var dx = core.utils.scan[dir].x,
-			dy = core.utils.scan[dir].y;
-		var loop = function(timeStamp){
-			if(timeStamp-lastTime>fps){
-				lastTime = timeStamp;
-				x += dx*speed;
-				y += dy*speed;
-				core.clearMap('arrow');
-				core.drawImage('arrow','arrow.png',idx*32,0,32,32,x,y,32,32);
-			}
-			if(Math.abs(sx*32-x) + Math.abs(sy*32-y) >= dis*32){
-				core.unregisterAnimationFrame('arrow');
-				core.clearMap('arrow');
-				if(callback)callback();
-			}
-		}
-		core.registerAnimationFrame('arrow', true, loop);
-	}
-	*/
 
-// update archer actions
-	this.aiCheckHero = function(){
+
+	// update archer actions
+	this.aiCheckHero = function () {
 		/// 检查是否碰怪
-		if(!core.status.heroMoving){
+		if (!core.status.heroMoving) {
 			var loc = core.status.hero.loc;
 			/*core.status.thisMap.blocks.forEach(function(blk){
 				if(blk.x == loc.x && blk.y == loc.y && blk.event.cls=='enemys' && !blk.disable){
@@ -841,34 +1049,37 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 				}
 			});// 暂时无法解决事件重叠问题 请避免此类设计
 			*/
-			if(core.getBlock(loc.x,loc.y)){
+			if (core.getBlock(loc.x, loc.y)) {
 				core.insertAction([
-					{"type": "trigger", "loc": [loc.x,loc.y]},
+					{ "type": "trigger", "loc": [loc.x, loc.y] },
 				]);
 			}
 		}
 	}
-	this.mainArcherLoop = function(){
+	this.mainArcherLoop = function () {
 		AIaction();
 		var ct = 0;
-		flags.aiBlks.forEach(function(blk){if(blk.action)ct+=1;});
-		flags.aiBlks.forEach(function(blk){
-			var callback = function(){
-				// core.status.thisMap.blocks.push(blk);
+		flags.aiBlks.forEach(function (blk) { if (blk.action) ct += 1; });
+		flags.aiBlks.forEach(function (blk) {
+			var callback = function (blk) {
+				if(blk.exDmg){
+					blk.podmg = blk.podmg || 0;
+					blk.podmg += blk.exDmg;
+					hurt(blk, blk.exDmg);
+				}
 				ct -= 1;
-				if(ct == 0){
+				if (ct == 0) {
 					core.aiCheckHero();
 				}
 			}
-			if(blk.action){
-				if(core.isReplaying()){
+			if (blk.action) {
+				if (core.isReplaying()) {
 					callback();
-				}else {
-					blk.notify('move',
-					{
+				} else {
+					blk.notify('move', {
 						direction: blk.action,
 						speed: 5,
-						callback: callback
+						callback: callback.bind(this, blk),
 					});
 				}
 				blk.x += core.utils.scan[blk.action].x;
@@ -877,33 +1088,33 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		});
 	}
 
-// 基本射击
+	// 基本射击
 	var blockProc = { // 基本的检查方法
-		'enemys':function(blk, simulate){
-			if(!simulate){
+		'enemys': function (blk, simulate, arrow) {
+			if (!simulate) {
 				core.playSound('shootOn.ogg');
-				hurt(blk);
+				hurt(blk, null, arrow);
 			}
-			if((flags.buff||{})["skill5"])return false;
+			if ((flags.buff || {})["skill5"]) return false;
 			return true;
 		},
-		'terrains':function(blk, simulate){
-			if(core.hasEquip('arrow5')){
-				if(flags.breakTerrain){
+		'terrains': function (blk, simulate) {
+			if (core.hasEquip('arrow5')) {
+				if (flags.breakTerrain) {
 					flags.breakTerrain = false;
 					return true;
-				}else{
+				} else {
 					flags.breakTerrain = true;
 					return false;
 				}
 			}
 			return true;
 		},
-		'items':function(){
+		'items': function () {
 			return false;
 		}
 	}
-	var baseShoot = function(checkFunc){
+	var baseShoot = function (checkFunc) {
 		var loc = core.status.hero.loc;
 		checkFunc = checkFunc || blockProc;
 
@@ -911,35 +1122,62 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		//simulate = true;
 		//var route = getShootRoute(loc, checkFunc); // 模拟射击
 		//simulate = false;
-		var callback = function(){
+		var callback = function () {
 			core.mainArcherLoop();
 			core.status.hero.eventlock = false;
 			core.unLockControl();
 			core.updateStatusBar();
 			core.updateBuff();
+			core.insertAction('afterShoot');
 		}
-		if(core.isReplaying()){
+		if (core.isReplaying()) {
 			shoot(loc.x, loc.y, loc.direction, checkFunc);
 			callback();
-		}else{
+		} else {
 			core.status.hero.eventlock = true;
 			core.lockControl();
 			core.waitHeroToStop(
 				function(){
-					core.shootAnimate(loc.x,loc.y,loc.direction,checkFunc,callback);
-					//core.shootAnimate(loc.x,loc.y,loc.direction,dist,callback);
-				}
+					core.setHeroIcon("hero_act");
+                    core.status.hero.loc.notify("change",  {name:"hero_act", line:core.utils.line[core.getHeroLoc('direction')]});
+                    core.status.hero.loc.notify("play", {
+                    	onetime: true,
+						speed: 4,
+                        callback:function () {
+                            core.shootAnimate(loc.x, loc.y, loc.direction, checkFunc, function(){
+                            	if(callback)callback();
+                                core.setHeroIcon("hero_archer");
+							});
+                            //core.shootAnimate(loc.x,loc.y,loc.direction,dist,callback);
+                        }
+                    });
+                }
 			);
 		}
 	}
 
 
-	this.hasChoiceSkill = function(itemId){
-		if(itemId.indexOf('skill')==0){
-			if((flags.buff || {})[itemId])return true;
-		}else{
+	/// 状态设置
+	this.setBuffStatus = function(it, value){
+		flags.buff = flags.buff || {};
+		flags.buff[it] = value || true;
+	}
+
+	this.removeBuffStatus = function(it){
+		flags.buff = flags.buff || {};
+		delete flags.buff[it];
+	}
+
+	this.hasBuffStatus = function(it){
+		return ((flags.buff || {})[it]);
+	}
+
+	this.hasChoiceSkill = function (itemId) {
+		if (itemId.indexOf('skill') == 0) {
+			if ((flags.buff || {})[itemId]) return true;
+		} else {
 			var a = flags.arrowCho || 'arrow1';
-			if(itemId == a){
+			if (itemId == a) {
 				return true;
 			}
 		}
@@ -947,23 +1185,23 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 	}
 
 	var skillCostTable = {
-		'skill1':0,
-		'skill2':1,
-		'skill3':3,
-		'skill4':1,
-		'skill5':2,
+		'skill1': 0,
+		'skill2': 1,
+		'skill3': 3,
+		'skill4': 1,
+		'skill5': 2,
 	};
 	var arrowCostTable = {
-		'arrow1':1,
-		'arrow2':2,
-		'arrow3':4,
-		'arrow4':2,
-		'arrow5':3,
+		'arrow1': 1,
+		'arrow2': 2,
+		'arrow3': 4,
+		'arrow4': 2,
+		'arrow5': 3,
 	};
 	var skillEffectTable = {
-		'skill1':baseShoot,
-		'skill2':function(){
-			flags.nets = flags.nets||[];
+		'skill1': baseShoot,
+		'skill2': function () {
+			flags.nets = flags.nets || [];
 			flags.nets.push({
 				x: core.getHeroLoc('x'),
 				y: core.getHeroLoc('y'),
@@ -972,93 +1210,120 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 			core.drawNets(core.scenes.mapScene.getLayer('event'));
 			return false;
 		},
-		'skill3':function(){
+		'skill3': function () {
 			core.insertAction("灵引");
 			return false;
 		},
-		'skill4':function(){
+		'skill4': function () {
 			var dir = core.status.hero.loc.direction;
 			var dx = core.utils.scan[dir].x,
 				dy = core.utils.scan[dir].y;
-			var x = core.status.hero.loc.x - 2*dx,
-				y = core.status.hero.loc.y - 2*dy;
+			var x = core.status.hero.loc.x - 2 * dx,
+				y = core.status.hero.loc.y - 2 * dy;
 			core.status.hero.loc.x = x;
 			core.status.hero.loc.y = y;
 			core.drawHero();
 			return false;
 		},
-		'skill5':function(){
+		'skill5': function () {
 			return true;
+		},
+		'skill6': function () {
+			return true;
+		},
+		'skill7': function(){
+			var cur = core.hasBuffStatus('skill7') || 0;
+			core.setBuffStatus('skill7', cur+1);
+			var cho = 'cost' + (cur+1);
+			var manaCost = core.items.items['skill7'].equip[cho] || 0;
+			core.status.hero.mana -= manaCost;
+			core.mainArcherLoop();// 会浪费回合 所以无法撤销
 		}
 	};
-	this.canUseSkill = function(id){
-		switch(id) {
-			case 'skill1':break;
-			case 'skill2':
-				if(!(flags.nets||[]).find(function(n){return n.x==core.getHeroLoc('x') && n.y==core.getHeroLoc('y')})){
-					return true;
-				}return false;
-			case 'skill3':break;
-			case 'skill4':
-				var dir = core.status.hero.loc.direction;
-				var dx = core.utils.scan[dir].x,
-					dy = core.utils.scan[dir].y;
-				var x2 = core.status.hero.loc.x - 2*dx,
-					y2 = core.status.hero.loc.y - 2*dy;
-					x1 = core.status.hero.loc.x - dx,
-					y1 = core.status.hero.loc.y - dy;
-				if(x2<0 || y2 <0 || x2>= core.__BLOCK_SIZE__ || y2>=core.__BLOCK_SIZE__){
-					return false;
-				}
-				return !core.getBlock(x1, y1) && !core.getBlock(x2,y2);
-			case 'skill5':
-				break;
+	this.canUseSkill = function (id) {
+		switch (id) {
+		case 'skill1':
+			break;
+		case 'skill2':
+			if (!(flags.nets || []).find(function (n) { return n.x == core.getHeroLoc('x') && n.y == core.getHeroLoc('y') })) {
+				return true;
+			}
+			return false;
+		case 'skill3':
+			break;
+		case 'skill4':
+			var dir = core.status.hero.loc.direction;
+			var dx = core.utils.scan[dir].x,
+				dy = core.utils.scan[dir].y;
+			var x2 = core.status.hero.loc.x - 2 * dx,
+				y2 = core.status.hero.loc.y - 2 * dy;
+			x1 = core.status.hero.loc.x - dx,
+				y1 = core.status.hero.loc.y - dy;
+			if (x2 < 0 || y2 < 0 || x2 >= core.__BLOCK_SIZE__ || y2 >= core.__BLOCK_SIZE__) {
+				return false;
+			}
+			return !core.getBlock(x1, y1) && !core.getBlock(x2, y2);
+		case 'skill5':
+			break;
+		case 'skill6':
+			break;
+		case 'skill7':
+			var cur = core.hasBuffStatus('skill7') || 1;
+			var cho = 'cost' + cur;
+			var manaCost = core.items.items['skill7'].equip[cho];
+			if(!manaCost)return false;
+			if(core.status.hero.mana < manaCost){
+				return false;
+			}
+			break;
 		}
 		return true;
 	}
-	this.useSkill = function(itemId){
+	this.useSkill = function (itemId) {
 		var arrowCho = flags.arrowCho || 0;
 		var arrow = core.status.hero.equipment[0];
-		if(!arrow){
+		if (!arrow) {
 			core.drawTip('需要先装备弓箭！');
 			return;
 		}
-		if(itemId=='skill1'){
-			var moneyCost = core.items.items[arrow].equip.cost;
-			if(core.status.hero.money >= moneyCost){
-				core.autosave(true);// 发射前自动存档
+		if (itemId == 'skill1') {
+			var moneyCost = core.items.items[arrow].equip.cost * core.getArcherModeInfo().cost;
+			if (core.status.hero.money >= moneyCost) {
+				core.autosave(true); // 发射前自动存档
 				core.status.hero.money -= moneyCost;
-			}else{
+			} else {
 				core.drawTip('金币不足以制造箭矢！');
 				return;
 			}
 			skillEffectTable[itemId]();
-		}else{ // 立即使用型
+		} else if(core.items.items[itemId].equip.cost) { // 立即使用型(cost不为0)
 			flags.buff = flags.buff || {};
 			var manaCost = core.items.items[itemId].equip.cost || 0;
-			if(core.status.hero.mana >= manaCost || flags.buff[itemId]){
-				if(flags.buff[itemId]){ // cancel
+			if (core.status.hero.mana >= manaCost || flags.buff[itemId]) {
+				if (flags.buff[itemId]) { // cancel
 					core.status.hero.mana += manaCost;
 					flags.buff[itemId] = false;
 					return;
-				}
-				else if(skillEffectTable[itemId]()){ // use
+				} else if (skillEffectTable[itemId]()) { // use
 					flags.buff[itemId] = true;
 				}
 				core.status.hero.mana -= manaCost;
-			}else{
+			} else {
 				core.drawTip('能量不足！');
 			}
+		}else{
+			skillEffectTable[itemId](); 
 		}
 	}
 
-	this.drawNets = function(ctx, floorId){
+	this.drawNets = function (ctx, floorId) {
+		ctx = ctx || core.scenes.mapScene.getLayer('event');
 		floorId = floorId || core.status.floorId;
-		(core.getFlag('nets', [])).forEach(function(blk){
-			if(blk.floorId != floorId)return;
-			if(blk.notify && blk.observers().length>0){
+		(core.getFlag('nets', [])).forEach(function (blk) {
+			if (blk.floorId != floorId) return;
+			if (blk.notify && blk.observers().length > 0) {
 				blk.notify("draw");
-			}else{
+			} else {
 				core.becomeSubject(blk);
 				var obj = core.getSpriteObj('flower');
 				ctx.addNewObj(obj, 0);
@@ -1066,29 +1331,49 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 				blk.notify("draw");
 			}
 		});
-		
-		(core.getFlag('changePoints', {})[floorId]||[]).forEach(function(blk){
-			if(blk.notify && blk.observers().length>0){
+
+		(core.getFlag('changePoints', {})[floorId] || []).forEach(function (blk) {
+			if (blk.notify && blk.observers().length > 0) {
 				blk.notify("draw");
-			}else{
+			} else {
 				core.becomeSubject(blk);
-				var obj = core.getSpriteObj(blk.direction+'Portal');
-				obj.addAnimateInfo({'speed':30});
+				var obj = core.getSpriteObj(blk.direction + 'Portal');
+				obj.addAnimateInfo({ 'speed': 30 });
 				ctx.addNewObj(obj, 0);
 				blk.addObserver(obj);
 				blk.notify("draw");
 			}
 		});
+
+		// 人偶
+		if(core.hasFlag('doll')){
+			var doll = core.getFlag('doll');
+			if(doll.floorId == floorId){
+				var blk = doll;
+				if (blk.notify && blk.observers().length > 0) {
+					blk.notify("draw");
+				} else {
+					core.becomeSubject(blk);
+					var obj = core.getSpriteObj("hero");
+					obj.setPositionWithBlock(blk);
+					ctx.addNewObj(obj);
+					blk.addObserver(obj);
+					blk.notify("draw");
+				}
+			}
+		}
+
 	}
-	this.updateBuff = function(){
+	this.updateBuff = function () {
 		//// 射箭后更新各种buff信息
-		
+
 		// 强击关闭
-		(flags.buff || {})['skill5']=false; 
+		(flags.buff || {})['skill5'] = false;
+		(flags.buff || {})['skill7'] = 0;
 		// 用过的转向清除
-		
-		(flags.changePoints||{})[core.status.floorId] = ((flags.changePoints||{})[core.status.floorId]||[]).filter(function(pt){
-			if(pt.disable && pt.notify){
+
+		(flags.changePoints || {})[core.status.floorId] = ((flags.changePoints || {})[core.status.floorId] || []).filter(function (pt) {
+			if (pt.disable && pt.notify) {
 				pt.notify('remove');
 			}
 			return !pt.disable
@@ -1100,28 +1385,86 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 	}
 
 
-	this.checkAfterBattle = function(){
-		switch(core.status.floorId){
+	this.checkAfterBattle = function () {
+		// todo event
+		switch (core.status.floorId) {
 			case 'MT1':
-				if(!core.status.thisMap.blocks.find(function(blk){
-					return blk.event.cls == 'enemys';
-				})){
+				if (!core.status.thisMap.blocks.find(function (blk) {
+						return blk.event.cls == 'enemys';
+					})) {
 					core.insertAction([
-						{"type": "show", "loc": [[4,0]], "time": 500},
-					  ]);
+						{ "type": "show", "loc": [
+								[4, 0]
+							], "time": 500 },
+					]);
 				}
 				break;
-			default:break;
+			default:
+				break;
 		}
 	}
-},
 
-"gestureAction":function(){
+/// 区域光环的显示
+	maps.prototype._bindObserverToBlock = function(block, sprite) {
+		// if(block.hasObserver(block.event.sprite))return;
+		if(block.event.cls.indexOf('enemy')>=0){
+			var aura = core.material.enemys[block.event.id].aura;
+			if(aura){
+				var dist = aura.range || 3;
+				var rect = (dist*2+1);
+				var ctx = core.createCleanCanvas('temp',0,0,rect*core.__BLOCK_SIZE__,rect*core.__BLOCK_SIZE__).getContext('2d');
+				ctx.fillStyle = aura.color || "#00ff00";
+				for (var i = 0;i < rect ;i++){
+					for (var j = 0;j < rect ;j++){
+						if(Math.abs(dist-i)+Math.abs(dist-j)<dist)
+						ctx.fillRect(i*core.__BLOCK_SIZE__,j*core.__BLOCK_SIZE__,core.__BLOCK_SIZE__,core.__BLOCK_SIZE__);
+					}
+				}
+				var text = core.getTextureFrom(ctx.canvas);
+				var obj = core.getSpriteFromTextures([[text]]);
+				
+				obj.anchor.set(0.5,0.5);
+				obj.alpha = 0.5;
+				obj.zIndex = -1;
+
+				block.addObserver(
+					obj
+				);
+			}
+		}
+		sprite = sprite || core.getSpriteObj(block.event.sprite);
+		if(block.hasObserver(sprite))return;
+		block.addObserver(
+			sprite
+		);
+	}
+
+	// 
+	this.switchArcherMode = function(){
+		flags.archerMode = flags.archerMode || 'normal';
+		flags.modeList = flags.modeList || ['normal'];
+		flags.archerMode = flags.modeList[(flags.modeList.indexOf(flags.archerMode)+1)%flags.modeList.length];
+		core.updateStatusBar();
+	}
+	this.addArcherMode = function(name){
+		flags.modeList = flags.modeList || ['normal'];
+		flags.modeList.push(name);
+	}
+	this.getArcherModeInfo = function(){
+		var info = core.material.items['modeSwitch'].equip[flags.archerMode||'normal'];
+		return info;
+	}
+	
+
+
+
+},
+    "gestureAction": function(){
 	///// 手势识别
 	var mx, my, moving=false;
 	var route = [];
 	var vecs = [];
-	var thrLen = 25; // 判断路径的点数阈值
+	var thrLen = 2; // 判断路径的点数阈值
 	var thrDist2 = 32*32; // 记录距离的阈值
 
 	// 基本向量操作
@@ -1322,8 +1665,24 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 			core.fillText('ui', '<继续点击该道具即可进行使用>', 10, curr, '#CCCCCC', this._buildFont(14, false));
 		}
 	}
-	
+
+////// 捕捉、警惕 //////
+	control.prototype._checkBlock_ambush = function (ambush) {
+		if (!ambush || ambush.length == 0) return;
+		var actions = [];
+		// 警惕 & 捕捉
+		ambush.forEach(function (t) {
+			if(core.nearHero(t[0], t[1])){
+                actions.push({"type": "battle", "id": t[2]});
+			}else{
+				var blk = core.getBlock(t[0], t[1]);
+				if(blk)core.insertAI(blk.block);
+				actions.push({"type": "move", "loc": [t[0],t[1]], "steps": [t[3]], "time": 500, "keep": true, "async":true});
+            }
+		});
+        actions.push({"type": "waitAsync"});
+        core.insertAction(actions);
+	}
 
 }
-
 }

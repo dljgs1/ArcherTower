@@ -259,7 +259,7 @@ var icons_4665ee12_3a1f_44a4_bea3_0fccba634dc1 =
 		"shoes": 47,
 		"hammer": 48,
 		"jumpShoes": 49,
-		"skill_1": 30,
+		"modeSwitch": 30,
 		"wand": 10,
 		"arrow1": 62,
 		"arrow2": 63,
@@ -271,6 +271,9 @@ var icons_4665ee12_3a1f_44a4_bea3_0fccba634dc1 =
 		"skill4": 69,
 		"skill5": 70,
 		"skill1": 71,
+		"skill6": 72,
+		"doll": 73,
+		"skill7": 74
 	},
 	"autotile": {
 		"autotile0": 0,

@@ -16,7 +16,7 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 	// 初始化人物，图标，统计信息
 	core.status.hero = core.clone(hero);
 	window.flags = core.status.hero.flags;
-	core.events.setHeroIcon(core.getFlag('heroIcon', 'hero.png'), true);
+	core.events.setHeroIcon(core.getFlag('heroIcon', core.status.hero.loc.name || 'hero'), true);
 	core.control._initStatistics(core.animateFrame.totalTime);
 	core.status.hero.statistics.totalTime = core.animateFrame.totalTime =
 		Math.max(core.status.hero.statistics.totalTime, core.animateFrame.totalTime);
@@ -121,11 +121,21 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 	//     core.deleteAllCanvas();
 	// }
 
+
 	// AI信息块
 	if(currentId && !fromLoad){
+		// 剔除aiBlk中的非嗜血怪
+		flags.aiBlks = (flags.aiBlks||[]).filter(function(blk){
+			return core.hasSpecial(blk.event.id, 31);
+		});
 		core.saveAIData(currentId);
 	}
 	core.loadAIData(floorId);
+
+	// 激活嗜血怪
+	if(!fromLoad){
+		core.updateChaseBleed(floorId);
+	}
 
 	// 重置画布尺寸
 	core.maps.resizeMap(floorId);
@@ -288,31 +298,35 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 	// 删除该块
 	var guards = []; // 支援
 	if (x != null && y != null) {
+		var blk = core.getBlock(x,y)
+		core.afterDead(blk.block);
 		core.removeBlock(x, y);
 		guards = core.getFlag("__guards__" + x + "_" + y, []);
 		core.removeFlag("__guards__" + x + "_" + y);
+	}else{
+		// 获得金币和经验
+		var money = guards.reduce(function (curr, g) {
+			return curr + core.material.enemys[g[2]].money;
+		}, enemy.money);
+		if (core.hasItem('coin')) money *= 2;
+		if (core.hasFlag('curse')) money = 0;
+
+		var experience = guards.reduce(function (curr, g) {
+			return curr + core.material.enemys[g[2]].experience;
+		}, enemy.experience);
+		if (core.hasFlag('curse')) experience = 0;
+		core.status.hero.experience += experience;
+		core.status.hero.statistics.experience += experience;
+
+		var hint = "打败 " + enemy.name;
+		if (core.flags.enableMoney) hint += "，金币+" + money;
+		if (core.flags.enableExperience) hint += "，经验+" + experience;
+		core.drawTip(hint);
 	}
 
-	// 获得金币和经验
-	var money = guards.reduce(function (curr, g) {
-		return curr + core.material.enemys[g[2]].money;
-	}, enemy.money);
-	if (core.hasItem('coin')) money *= 2;
-	if (core.hasFlag('curse')) money = 0;
-	core.status.hero.money += money;
-	core.status.hero.statistics.money += money;
-
-	var experience = guards.reduce(function (curr, g) {
-		return curr + core.material.enemys[g[2]].experience;
-	}, enemy.experience);
-	if (core.hasFlag('curse')) experience = 0;
-	core.status.hero.experience += experience;
-	core.status.hero.statistics.experience += experience;
-
-	var hint = "打败 " + enemy.name;
-	if (core.flags.enableMoney) hint += "，金币+" + money;
-	if (core.flags.enableExperience) hint += "，经验+" + experience;
-	core.drawTip(hint);
+	
+	//core.status.hero.money += money;
+	//core.status.hero.statistics.money += money;
 
 	// 事件的处理
 	var todo = [];
@@ -359,6 +373,20 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 		core.setFlag('skill', 0);
 		core.setFlag('skillName', '无');
 	}
+
+	// silie
+	if(core.enemys.hasSpecial(special, 30)){
+		core.setBuffStatus('bleed');
+		core.updateChaseBleed();
+	}
+
+	// cure
+	if(core.enemys.hasSpecial(special, 32)){
+		core.removeBuffStatus('bleed');
+		core.updateChaseBleed();
+	}
+
+
 	core.updateStatusBar();
 
 	// 如果有加点
@@ -496,13 +524,21 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 		[24, "激光", function (enemy) { return "经过怪物同行或同列时自动减生命" + (enemy.value || 0) + "点"; }],
 		[25, "光环", function (enemy) { return "同楼层所有怪物生命提升" + (enemy.value || 0) + "%，攻击提升" + (enemy.atkValue || 0) + "%，防御提升" + (enemy.defValue || 0) + "%，" + (enemy.add ? "可叠加" : "不可叠加"); }],
 		[26, "支援", "当周围一圈的怪物受到攻击时将上前支援，并组成小队战斗。"],
-		[27, "捕捉", "当走到怪物周围十字时会强制进行战斗。"]
+		[27, "捕捉", "当走到怪物周围十字时会强制进行战斗。"],
+		[28, "避矢", "箭矢无法击中，只能肉搏战斗。"],
+		[29, "关门", "战后在指定位置关门。"],
+		[30, "撕裂", "战后敌人魔防回血无效（持续），伤口无法愈合，吸引野兽。"],
+		[31, "兽性", "鲜血引来了捕食者，闻到血味后主动出击。怪物受伤后，仇恨不会被遗忘。"],
+		[32, "治愈", "此怪战斗伤害为负，且消除撕裂状态。"],
+		[33, "毒免", "此怪免疫毒伤。"],
+		[34, "警觉", "当此怪视线范围有怪物被击杀，会引发此怪巡逻。如果出现在此怪视线中，会引发此怪追杀。"],
+
 	];
 },
         "getEnemyInfo": function (enemy, hero, x, y, floorId) {
 	// 获得某个怪物变化后的数据；该函数将被伤害计算和怪物手册使用
 	// 例如：坚固、模仿、仿攻等等
-	// 
+	//
 	// 参数说明：
 	// enemy：该怪物信息
 	// hero_hp,hero_atk,hero_def,hero_mdef：勇士的生命攻防魔防数据
@@ -622,7 +658,7 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 },
         "getDamageInfo": function (enemy, hero, x, y, floorId) {
 	// 获得战斗伤害信息（实际伤害计算函数）
-	// 
+	//
 	// 参数说明：
 	// enemy：该怪物信息
 	// hero：勇士的当前数据；如果对应项不存在则会从core.status.hero中取。
@@ -634,7 +670,7 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 	var hero_hp = core.getRealStatusOrDefault(hero, 'hp'),
 		hero_atk = core.getRealStatusOrDefault(hero, 'atk'),
 		hero_def = core.getRealStatusOrDefault(hero, 'def'),
-		hero_mdef = core.getRealStatusOrDefault(hero, 'mdef'),
+		hero_mdef = core.hasBuffStatus('bleed')?0:core.getRealStatusOrDefault(hero, 'mdef'), // 撕裂状态下魔防无效
 		origin_hero_hp = hero_hp,
 		origin_hero_atk = hero_atk,
 		origin_hero_def = hero_def;
@@ -652,22 +688,23 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 		mon_atk = enemyInfo.atk,
 		mon_def = enemyInfo.def,
 		mon_special = enemyInfo.special;
-	var damage = Math.max(0, mon_hp +  Math.max(0,mon_atk - hero_def));
 	// if(!core.getBlock(x,y))damage = 0;
-
-	return {
-		"mon_hp": Math.floor(mon_hp),
-		"mon_atk": Math.floor(mon_atk),
-		"mon_def": Math.floor(mon_def),
-		"init_damage": 0,
-		"per_damage": 0,
-		"hero_per_damage": 0,
-		"turn": 1,
-		"damage": damage
-	};
+	if(core.hasEquip('shield0')){
+		var damage = Math.max(0, mon_hp +  Math.max(0,mon_atk - hero_def));
+		return {
+			"mon_hp": Math.floor(mon_hp),
+			"mon_atk": Math.floor(mon_atk),
+			"mon_def": Math.floor(mon_def),
+			"init_damage": 0,
+			"per_damage": 0,
+			"hero_per_damage": 0,
+			"turn": 1,
+			"damage": damage
+		};
+	}
 	// 技能的处理
 	if (core.getFlag('skill', 0) == 1) { // 开启了技能1：二倍斩
-		hero_atk *= 2; // 计算时攻击力翻倍	
+		hero_atk *= 2; // 计算时攻击力翻倍
 	}
 
 	// 如果是无敌属性，且勇士未持有十字架
@@ -1133,7 +1170,11 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 	}
 
 	// 难度
-	core.statusBar.hard.innerHTML = (core.hasItem('arrow1')||core.hasEquip('arrow1'))?'射击':'';
+	var info = core.getArcherModeInfo();
+	core.statusBar.hard.innerHTML = info.name;
+	//(core.hasItem('arrow1')||core.hasEquip('arrow1'))?'射击':'';
+	core.statusBar.hard.style.color = info.color;
+
 	// 自定义状态栏绘制
 	core.drawStatusBar();
 
@@ -1236,18 +1277,27 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 			}
 		}
 
-		// 捕捉
+		// 捕捉 & 警戒
 		// 如果要防止捕捉效果，可以直接简单的将 flag:no_ambush 设为true
-		if (enemy && core.enemys.hasSpecial(enemy.special, 27)) {
+		if (enemy && (core.enemys.hasSpecial(enemy.special, 27)||core.enemys.hasSpecial(enemy.special, 34))) {
 			// 给周围格子加上【捕捉】记号
-			for (var dir in core.utils.scan) {
-				var nx = x + core.utils.scan[dir].x,
-					ny = y + core.utils.scan[dir].y,
-					currloc = nx + "," + ny;
-				if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-				ambush[currloc] = (ambush[currloc] || []).concat([
-					[x, y, id, dir]
-				]);
+			var dist = core.enemys.hasSpecial(enemy.special, 27) ? 0:1;
+			if(dist && core.hasAI(block)){
+			}else{
+                for (var dir in core.utils.scan) {
+                    var dx = core.utils.scan[dir].x,
+                        dy = core.utils.scan[dir].y;
+                    var nx = x + dx,
+                        ny = y + dy,
+                        currloc = nx + "," + ny;
+                    do{
+                        if (nx < 0 || nx >= width || ny < 0 || ny >= height) break;
+                        ambush[currloc] = (ambush[currloc] || []).concat([
+                            [x, y, id, dir]
+                        ]);
+                        nx += dx; ny += dy; currloc = nx + "," + ny;
+					}while(dist && !core.getBlock(nx, ny));
+                }
 			}
 		}
 	}
@@ -1304,9 +1354,7 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 		cache: {} // clear cache
 	};
 },
-
-
-"beforeMoveStep": function(canMove){
+        "beforeMoveStep": function(canMove){
 	// 勇士即将走出一步前的操作 
 	if(canMove){
 		var tmp = core.status.heroMoving;
@@ -1323,6 +1371,7 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 	// 2, 将楼层属性中的cannotMoveDirectly这个开关勾上，即禁止在该层楼使用瞬移。
 	// 3. 将flag:cannotMoveDirectly置为true，即可使用flag控制在某段剧情范围内禁止瞬移。
 
+	(flags.buff || {})['skill7'] = 0; // 蓄力取消
 	// 设置当前坐标，增加步数
 	core.setHeroLoc('x', x, true);
 	core.setHeroLoc('y', y, true);
