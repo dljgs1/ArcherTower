@@ -230,11 +230,11 @@ scenes.prototype._load = function(){
     this.mainScene = this.getNewScene();
 
     this.mapScene = this.getNewScene('map');
-    this.statusScene = this.getNewScene('status');
+    //this.statusScene = this.getNewScene('status');
 
     // TODO : 更多系统场景（状态栏、工具栏窗口化）
     this.mainScene.addChildScene(this.mapScene);
-    this.mainScene.addChildScene(this.statusScene);
+    // this.mainScene.addChildScene(this.statusScene);
 
     this.mapScene.addLayer('back', core.getNewLayerSprite(),0);
     this.mapScene.addLayer('bg', core.getNewLayerSprite(),1);
@@ -242,9 +242,9 @@ scenes.prototype._load = function(){
     this.mapScene.addLayer('fg', core.getNewLayerSprite(),3);
     this.mapScene.addLayer('number', core.getNewLayerSprite(),4);
 
-    this.statusScene.addLayer('back', core.getNewLayerSprite(), 1)
-    this.statusScene.addLayer('data', core.getNewLayerSprite(), 2)
-    this.statusScene.addLayer('animate', core.getNewLayerSprite(), 3)
+    //this.statusScene.addLayer('back', core.getNewLayerSprite(), 1)
+    //this.statusScene.addLayer('data', core.getNewLayerSprite(), 2)
+    //this.statusScene.addLayer('animate', core.getNewLayerSprite(), 3)
 
 
     ///// ----- 伤害依然使用canvas 但是离屏绘制

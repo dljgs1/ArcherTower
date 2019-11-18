@@ -594,11 +594,11 @@ maps.prototype._canMoveDirectly_bfs = function (sx, sy, locs, number, ans) {
 maps.prototype._canMoveDirectly_checkNextPoint = function (blocksObj, x, y) {
     var index = x + "," + y;
     // 该点是否有事件
-    if (blocksObj[index]) return false;
+    if (blocksObj[index] && (blocksObj[index].event.trigger || blocksObj[index].event.noPass)) return false;
     // 是否存在阻激夹域伤害
-    if (core.status.checkBlock.damage[x + "," + y]) return false;
+    if (core.status.checkBlock.damage[index]) return false;
     // 是否存在捕捉
-    if (core.status.checkBlock.ambush[x + "," + y]) return false;
+    if (core.status.checkBlock.ambush[index]) return false;
 
     return true;
 }
@@ -1266,7 +1266,6 @@ maps.prototype._drawThumbnail_realDrawTempCanvas = function (floorId, blocks, op
     this.drawFg(floorId, fg);
     // 缩略图：显伤
     scene.removeLayer('tempDamage');
-
     if (options.damage){
         var tempCanvas = core.createCleanCanvas('tempDamage', 0, 0, core.bigmap.tempCanvas.canvas.width, core.bigmap.tempCanvas.canvas.height);
         var ctx = tempCanvas.getContext('2d');
@@ -1429,6 +1428,8 @@ maps.prototype.getBlockInfo = function (block) {
         faceIds = block.event.faceIds || {};
         if (core.material.enemys[id]) {
             name = core.material.enemys[id].name;
+        } else if (core.material.items[id]) {
+            name = core.material.items[id].name;
         }
     }
     var ret = {number: number, id: id, cls: cls, name: name, image: image, posX: posX, posY: posY, height: height, faceIds: faceIds, animate: animate};

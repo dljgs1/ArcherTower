@@ -19,7 +19,7 @@ loader.prototype._setStartProgressVal = function (val) {
 
 ////// 设置加载进度条提示文字 //////
 loader.prototype._setStartLoadTipText = function (text) {
-    core.dom.startTopLoadTips.innerHTML = text;
+    core.dom.startTopLoadTips.innerText = text;
 }
 
 loader.prototype._load = function (callback) {
@@ -68,6 +68,7 @@ loader.prototype._loadAutotiles = function (callback) {
     var keys = ['autotile'];//Object.keys(core.material.icons.autotile);
     //var keys = Object.keys(core.material.icons.autotile);
     var autotiles = {};
+    var obj = this;
     this.loadImages(keys, autotiles, function () {
         keys.forEach(function (v) {
             core.material.images.autotile = autotiles[v];
@@ -77,8 +78,20 @@ loader.prototype._loadAutotiles = function (callback) {
             core.maps._makeAutotileEdges();
         });
 
-        callback();
+        if(main.mode=='editor'){
+            autotiles = {};
+            core.material.images.autotiles = {};
+            keys = Object.keys(core.material.icons.autotile);
+            obj.loadImages(keys, autotiles, function () {
+                keys.forEach(function (v) {
+                    core.material.images.autotiles[v] = autotiles[v];
+                });
+            });
+            callback();
+        }else
+            callback();
     });
+
 }
 
 loader.prototype._loadTilesets = function (callback) {

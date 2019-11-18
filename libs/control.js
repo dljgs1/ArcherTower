@@ -102,8 +102,8 @@ function control() {
                 this.parent.relocate(this);
             }
         },
-        
-        // 摇晃 方向，强度 
+
+        // 摇晃 方向，强度
         'shake': function(block, info){
             var direction = info.direction || 'left';
             var callback = info.callback;
@@ -111,7 +111,7 @@ function control() {
             var dx = core.utils.scan[direction].x, dy = core.utils.scan[direction].y;
             var obj = this;
             var speed = info.speed || 32;
-            obj.addMoveInfo(dx*power, dy*power, speed, 
+            obj.addMoveInfo(dx*power, dy*power, speed,
                 function(){
                     obj.addMoveInfo(-dx*power,-dy*power, speed,callback, info);
                 }, info);
@@ -174,7 +174,7 @@ function control() {
             layer = this.parent || layer || obj;
             if(!layer)return;
             layer.removeChild(this);//从场景中移除自身
-            //block.remove(this);//! 观察者列表移除自身 直接移除会出bug 
+            //block.remove(this);//! 观察者列表移除自身 直接移除会出bug
             this.observe_dead = true;
         }
     }
@@ -193,6 +193,7 @@ control.prototype._init = function () {
     //this.registerAnimationFrame("heroMoving", true, this._animationFrame_heroMoving);
     // this.registerAnimationFrame("sprite", true, this._animationFrame_sprite);
     this.registerAnimationFrame("weather", true, this._animationFrame_weather);
+    this.registerAnimationFrame("tips", true, this._animateFrame_tips);
     this.registerAnimationFrame("parallelDo", false, this._animationFrame_parallelDo);
     this.registerAnimationFrame("checkConsoleOpened", true, this._animationFrame_checkConsoleOpened);
     // --- 注册系统的replay
@@ -457,6 +458,40 @@ control.prototype._animationFrame_weather_fog = function () {
         });
         core.setAlpha('weather',1);
     }
+}
+
+control.prototype._animateFrame_tips = function (timestamp) {
+    var tips = core.animateFrame.tips;
+    if (timestamp - tips.time <= 30) return;
+    var delta = timestamp - tips.time;
+    tips.time = timestamp;
+    if (tips.list.length == 0) return;
+
+    var currentOffset = Math.max(tips.offset - 5, 0), firstOffset = null;
+    var currList = [];
+    core.setFont('data', "16px Arial");
+    core.setTextAlign('data', 'left');
+    core.clearMap('data', 0, 0, this.PIXEL, tips.lastSize * 50);
+    tips.lastLength = tips.list.length;
+
+    while (tips.list.length > 0) {
+        var one = tips.list.shift();
+        core.ui._drawTip_drawOne(one, currentOffset);
+        if (one.stage == 1) {
+            one.opacity += 0.05;
+            if (one.opacity >= 0.7) one.stage = 2;
+        } else if (one.stage == 2) {
+            one.time += delta;
+            if (one.time >= 2000) one.stage = 3;
+        } else one.opacity -= 0.05;
+        if (one.opacity > 0) {
+            currList.push(one);
+            if (firstOffset == null) firstOffset = currentOffset;
+        }
+        currentOffset += 50;
+    }
+    tips.list = currList;
+    tips.offset = firstOffset || 0;
 }
 
 control.prototype._animationFrame_parallelDo = function (timestamp) {
@@ -778,7 +813,7 @@ control.prototype._herosSpriteMove = function(callback){
             o.notify("move",{
                 'moveSteps':[o.direction],
                 'direction': o.direction,
-                'speed': core.__BLOCK_SIZE__ / (core.values.moveSpeed/16.6), 
+                'speed': core.__BLOCK_SIZE__ / (core.values.moveSpeed/16.6),
                 // hero移动速度: 每帧的移动距离，一帧约为16.6ms values的movespeed代表移动一格经过的毫秒数
                 'callback': function(){
                     ct -= 1;
@@ -1059,7 +1094,7 @@ control.prototype.heroSpritePositionTransForm = function(obj, x, y, direction, s
     // obj.offsetX = core.utils.scan[direction].x * offset;
     // obj.offsetY = core.utils.scan[direction].y * offset;
     //obj.nFrame = obj.nFrame || mesh[status||'stop'];
-   // obj.nLine =  obj.nLine || dir[direction];
+    // obj.nLine =  obj.nLine || dir[direction];
 }
 
 ////// 绘制勇士 //////
@@ -1445,7 +1480,7 @@ control.prototype._updateDamage_damage = function (floorId, ctx) {
     });
 return;
     /* TODO: 字体绑定
-   
+
 */
     core.setTextAlign(ctx, 'left');
     core.status.maps[floorId].blocks.forEach(function (block) {
@@ -1766,11 +1801,11 @@ control.prototype._replay_save = function () {
         if (core.status.replay.save.length == 30)
             core.status.replay.save.shift();
         core.status.replay.save.push({"data": core.saveData(), "replay": {
-            "totalList": core.clone(core.status.replay.totalList),
-            "toReplay": core.clone(core.status.replay.toReplay),
-            "speed": core.status.replay.speed,
-            "steps": core.status.replay.steps
-        }});
+                "totalList": core.clone(core.status.replay.totalList),
+                "toReplay": core.clone(core.status.replay.toReplay),
+                "speed": core.status.replay.speed,
+                "steps": core.status.replay.steps
+            }});
     }
 }
 
@@ -1807,9 +1842,7 @@ control.prototype.__replay_getTimeout = function () {
 
 control.prototype._replayAction_move = function (action) {
     if (["up","down","left","right"].indexOf(action)<0) return false;
-    core.moveHero(action, function () {
-        setTimeout(core.replay);
-    });
+    core.moveHero(action, core.replay);
     return true;
 }
 
@@ -1891,8 +1924,8 @@ control.prototype._replayAction_shop = function (action) {
     if (selections.length == 0) return false;
     var shop=core.status.shops[shopId];
     if (!shop || !shop.visited) return false;
-    // --- 判定commonEvent
-    if (shop.commonEvent) {
+    // --- 判定commonEvent或item
+    if (shop.commonEvent || shop.item) {
         core.openShop(shopId, false);
         setTimeout(core.replay);
         return true;
@@ -1938,9 +1971,9 @@ control.prototype._replayAction_moveDirectly = function (action) {
     if (action.indexOf("move:")!=0) return false;
     // 忽略连续的瞬移事件
     while (core.status.replay.toReplay.length>0 &&
-        core.status.replay.toReplay[0].indexOf('move:')==0) {
-            core.status.route.push(action);
-            action = core.status.replay.toReplay.shift();
+    core.status.replay.toReplay[0].indexOf('move:')==0) {
+        core.status.route.push(action);
+        action = core.status.replay.toReplay.shift();
     }
 
     var pos=action.substring(5).split(":");
@@ -2554,6 +2587,7 @@ control.prototype.setCurtain = function(color, time, callback) {
 control.prototype._setCurtain_animate = function (nowColor, color, time, callback) {
     time /= Math.max(core.status.replay.speed, 1)
     var per_time = 10, step = parseInt(time / per_time);
+    if (step <= 0) step = 1;
     var animate = setInterval(function() {
         nowColor = [
             (nowColor[0]*(step-1)+color[0])/step,
@@ -2748,9 +2782,10 @@ control.prototype.clearStatusBar = function() {
 }
 
 ////// 更新状态栏 //////
-control.prototype.updateStatusBar = function () {
+control.prototype.updateStatusBar = function (doNotCheckAutoEvents) {
     if (!core.isPlaying()) return;
     this.controldata.updateStatusBar();
+    if (!doNotCheckAutoEvents) core.checkAutoEvents();
     this._updateStatusBar_setToolboxIcon();
 }
 

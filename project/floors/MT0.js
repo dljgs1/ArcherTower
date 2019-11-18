@@ -120,5 +120,6 @@ main.floors.MT0=
 
 ],
     "width": 13,
-    "height": 13
+    "height": 13,
+    "autoEvent": {}
 }
